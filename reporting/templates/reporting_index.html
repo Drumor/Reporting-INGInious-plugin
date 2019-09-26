@@ -1,0 +1,53 @@
+$def with(users,tasks,course)
+$var title: Reporting
+
+$var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
+
+$#
+$# This file is part of Reporting plugin. See the LICENSE and the COPYRIGHTS files for
+$# more information about the licensing of this file.
+$#
+
+<h1>Reporting - Select datas</h1>
+<form method="POST">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Students
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="select_all_students">Select all</button>
+                    </div>
+                </h2>
+                <div class="form-check">
+                    $for elem in users:
+                     <input type="checkbox" class="form-check-input checkbox-user" name="student_id_$elem[0]" value="$elem[0]">$elem[1][0]<br>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h2>
+                    Tasks
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="select_all_tasks">Select all</button>
+                    </div>
+                </h2>
+                <div class="form-check">
+                    $for elem in tasks:
+                     <input type="checkbox" class="form-check-input checkbox-task" name="task_id_$elem" value="$elem">$elem<br>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <button class="form-control" type="submit">Make report</button>
+</form>
+<script>
+    $$( document ).ready(function() {
+        $$('#select_all_students').click(function(){
+            $$('.checkbox-user').prop('checked',true);
+        });
+
+        $$('#select_all_tasks').click(function(){
+            $$('.checkbox-task').prop('checked',true);
+        });
+    });
+</script>

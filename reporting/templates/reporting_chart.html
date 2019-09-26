@@ -1,0 +1,137 @@
+$def with(course,table)
+$var title: Reporting
+$var header:
+    <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
+    <script src="$get_homepath(True)/static/js/libs/chartjs-plugin-annotation.min.js"></script>
+$var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
+
+$#
+$# This file is part of Reporting plugin. See the LICENSE and the COPYRIGHTS files for
+$# more information about the licensing of this file.
+$#
+
+<h1>Reporting - Results</h1>
+<canvas id="myChart"></canvas>
+<script>
+    /**
+     *
+     * Helpers
+     *
+     */
+    const reducer = (accumulator, currentValue) => accumulator + currentValue;
+    function mean(table,labels){
+        if (table.length === 0){
+            return 0
+        }else{
+            let sumnote = 0;
+            let i=0
+            while (i< table.length){
+                sumnote+= labels[i]*table[i];
+                i++;
+            }
+            let nstudents = table.reduce(reducer);
+            return Math.round((sumnote/nstudents)*2)*0.5;
+        }
+    }
+    function standard_deviation(table,labels, mean){
+        let result;
+        let sub_sum =0;
+        let i=0;
+        while(i<table.length){
+            let j=1;
+            while (j <= table[i]){
+                let val = Math.pow(Math.abs(labels[i]-mean),2);
+                sub_sum+=val;
+                j++;
+            }
+            i++;
+        }
+        let nstudents = table.reduce(reducer);
+        result = sub_sum/nstudents;
+        return Math.sqrt(result);
+    }
+
+    /**
+     *
+     * Display of the histogram
+     *
+     */
+
+    $$( document ).ready(function() {
+        //initialisation
+        var values = new Array(40);
+        values.fill(0);
+
+        var table_stud_per_note = $table;
+        //This is to pass percentage to /20 value
+        for (const [key, value] of Object.entries(table_stud_per_note)) {
+          values[(key)*2] = value;
+        }
+
+        var labels = [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15,15.5,16,16.5,17,17.5,18,18.5,19,19.5,20];
+        var m = mean(values,labels);
+        var sd = standard_deviation(values,labels,m);
+        sd = Math.round(sd*2)*0.5;
+        var dat =[{x:(m-sd),y:0.5},{x:(m+sd),y:0.5}];
+
+        var lines = [
+                      {
+						type: 'line',
+                        label:{content:'Mean',enabled:true,fontColor: "#000",backgroundColor:'red',cornerRadius: 0,position:"bottom"},
+						mode: 'vertical',
+						scaleID: 'x-axis-label',
+						value: m,
+						borderColor: 'red',
+						borderWidth: 1,
+
+                      }
+                    ];
+
+
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var mixedChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [{
+                    label: 'StudentPerNote',
+                    data: values
+                },{
+                    type: 'line',
+                    label:'StandardDeviation',
+                    data: dat,
+                    mode :'horizontal',
+                    scaleID:'x-axis-label',
+                    backgroundColor:'lightblue',
+                }
+              ],
+                labels: labels
+            },
+            options:{
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        id : 'x-axis-label',
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Note'
+                        },
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Students'
+                        }
+                    }]
+                },
+                annotation: {
+                    drawTime: 'afterDatasetsDraw',
+                    events : ["click"],
+                    annotations: lines
+                  }
+            },
+        });
+    });
+
+</script>
