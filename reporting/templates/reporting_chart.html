@@ -1,4 +1,4 @@
-$def with(course,table)
+$def with(course,stud_ids,task_ids)
 $var title: Reporting
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
@@ -11,7 +11,28 @@ $# more information about the licensing of this file.
 $#
 
 <h1>Reporting - Results</h1>
-<canvas id="myChart"></canvas>
+
+<!-- Nav tabs -->
+<ul class="nav nav-tabs">
+  <li class="nav-item">
+    <a class="nav-link active" id="diag1" data-toggle="tab" href="#home">Diagram 1</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="diag2"  data-toggle="tab" href="#menu1">Diagram 2</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="diag3"  data-toggle="tab" href="#menu2">Diagram 3</a>
+  </li>
+</ul>
+
+<!-- Tab panes -->
+<div class="tab-content">
+  <div class="tab-pane container-fluid active" id="home"><canvas id="myChart"></canvas></div>
+  <div class="tab-pane container-fluid fade" id="menu1"><canvas id="myChart2"></canvas></div>
+  <div class="tab-pane container-fluid fade" id="menu2">...</div>
+</div>
+
+
 <script>
     /**
      *
@@ -53,21 +74,49 @@ $#
 
     /**
      *
-     * Display of the histogram
+     * Requests
      *
      */
 
-    $$( document ).ready(function() {
+    function diagram_request(name) {
+      const url = window.location.href + name;
+      $$.ajax({
+        url: url,
+        data: {
+          "student_ids": "$str(stud_ids)",
+          "task_ids": "$str(task_ids)"
+        },
+        type: "POST",
+        success: function (result) {
+          let json_result = JSON.parse(result);
+          if (name ==="diag1"){
+            display_diagram_1(json_result);
+          }else if (name === "diag2"){
+            display_diagram_2(json_result);
+          }else {
+            console.log("none");
+          }
+
+        },
+        error: function (error) {
+          console.log("ERROR - " + error);
+        }
+      })
+    }
+     /**
+     *
+     * Displays of the histogram
+     *
+     */
+    function display_diagram_1(table_stud_per_note){
+
         //initialisation
         var values = new Array(40);
         values.fill(0);
-
-        var table_stud_per_note = $table;
         //This is to pass percentage to /20 value
         for (const [key, value] of Object.entries(table_stud_per_note)) {
           values[(key)*2] = value;
         }
-
         var labels = [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12,12.5,13,13.5,14,14.5,15,15.5,16,16.5,17,17.5,18,18.5,19,19.5,20];
         var m = mean(values,labels);
         var sd = standard_deviation(values,labels,m);
@@ -89,7 +138,7 @@ $#
 
 
         var ctx = document.getElementById('myChart').getContext('2d');
-        var mixedChart = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'bar',
             data: {
                 datasets: [{
@@ -132,6 +181,92 @@ $#
                   }
             },
         });
+    }
+
+    function display_diagram_2(table_per_task){
+      let nstuds =table_per_task["nstuds"];
+      let task_ids ="$task_ids".split(",");
+      let viewed =[];
+      let attempted = [];
+      let succeeded = [];
+      for (task_id of task_ids){
+          viewed.push(table_per_task[task_id][0]["viewed"]);
+          attempted.push(table_per_task[task_id][0]["attempted"]);
+          succeeded.push(table_per_task[task_id][0]["succeeded"]);
+      }
+
+      var line = [
+                      {
+						type: 'line',
+                        label:{content:'Total Students',enabled:true,fontColor: "#000",backgroundColor:'red',cornerRadius: 0,position:"bottom"},
+						mode: 'horizontal',
+						scaleID: 'y-axis-label',
+						value: nstuds,
+						borderColor: 'red',
+						borderWidth: 1,
+
+                      }
+                    ];
+
+      var ctx = document.getElementById('myChart2').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [
+        {
+            label: "Viewed",
+            backgroundColor: "blue",
+            data: viewed
+        },
+        {
+            label: "Attempted",
+            backgroundColor: "red",
+            data: attempted
+        },
+        {
+            label: "Succeeded",
+            backgroundColor: "green",
+            data: succeeded
+        }
+    ],
+                labels: task_ids
+            },
+            options:{
+                responsive: true,
+                scales: {
+                    xAxes: [{
+                        id : 'x-axis-label',
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Task'
+                        },
+                    }],
+                    yAxes: [{
+                      id : 'y-axis-label',
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: ' #Students'
+                        }
+                    }]
+                },
+                annotation: {
+                    drawTime: 'afterDatasetsDraw',
+                    events : ["click"],
+                    annotations: line
+                  }
+            },
+        });
+    }
+
+    $$( document ).ready(function() {
+       diagram_request("diag1");
+
     });
+
+    $$("#diag2").click(function () {
+        diagram_request("diag2");
+    })
 
 </script>
