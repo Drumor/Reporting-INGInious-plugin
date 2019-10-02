@@ -121,7 +121,15 @@ $#
         var m = mean(values,labels);
         var sd = standard_deviation(values,labels,m);
         sd = Math.round(sd*2)*0.5;
-        var dat =[{x:(m-sd),y:0.5},{x:(m+sd),y:0.5}];
+        var b1 = m-sd;
+        var b2 = m+sd;
+        if(b1 < 0){
+          b1=0;
+        }
+        if(b2 > 20){
+          b2=20;
+        }
+        var dat =[{x:b1,y:0.5},{x:b2,y:0.5}];
 
         var lines = [
                       {

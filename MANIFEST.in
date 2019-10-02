@@ -1,2 +1,2 @@
 recursive-include reporting/templates/ *
-recursive-include reporting/static *
+recursive-include reporting/static/ *
