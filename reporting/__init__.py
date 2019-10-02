@@ -149,6 +149,7 @@ def init(plugin_manager, _, _2, config):
                 tasks_data[task_id] = data
             return json.dumps(tasks_data)
 
+    plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
     plugin_manager.add_page("/admin/([^/]+)/reporting/", ReportingPage)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag1", Diagram1Page)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag2", Diagram2Page)
