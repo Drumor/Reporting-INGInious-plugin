@@ -103,8 +103,6 @@ def init(plugin_manager, _, _2, config):
 
             for stud_id in student_ids:
                 for task_id in task_ids:
-                    self._logger.info(stud_id)
-                    self._logger.info(task_id)
                     submissions = list(self.database.submissions.find(
                         {"courseid": courseID, "taskid": task_id, "username": stud_id}).sort(
                         [("submitted_on", pymongo.DESCENDING)]))
@@ -149,7 +147,6 @@ def init(plugin_manager, _, _2, config):
                         }
                 ]))
                 tasks_data[task_id] = data
-            self._logger.info(tasks_data)
             return json.dumps(tasks_data)
 
     plugin_manager.add_page("/admin/([^/]+)/reporting/", ReportingPage)
