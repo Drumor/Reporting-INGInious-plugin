@@ -39,6 +39,14 @@ def add_admin_menu(course):  # pylint: disable=unused-argument
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
 
+    def _clean_data(data):
+        cleaned = data.replace("&#39;", "")
+        cleaned = cleaned.replace("[", "")
+        cleaned = cleaned.replace("]", "")
+        cleaned = cleaned.replace(" ", "")
+        cleaned = cleaned.split(",")
+        return cleaned
+
     class ReportingPage(INGIniousAdminPage):
         """Page to allow user choose students and tasks from the course and then display a report diagram"""
 
@@ -77,52 +85,45 @@ def init(plugin_manager, _, _2, config):
                 .reporting_chart(course, student_ids, task_ids)
 
     class Diagram1Page(INGIniousAdminPage):
-        def POST(self,courseID):
+        def POST(self, courseID):
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             dicgrade = {}
             data = web.input()
 
-            student_ids = data["student_ids"].replace("&#39;", "")
-            student_ids = student_ids.replace("[", "")
-            student_ids = student_ids.replace("]", "")
-            student_ids = student_ids.replace(" ", "")
-            student_ids= student_ids.split(",")
-            task_ids = data["task_ids"].replace("&#39;", "")
-            task_ids = task_ids.replace("[", "")
-            task_ids = task_ids.replace("]", "")
-            task_ids = task_ids.replace(" ", "")
-            task_ids = task_ids.split(",")
-            evaluated_submissions = []
+            student_ids = _clean_data(data["student_ids"])
+            task_ids = _clean_data(data["task_ids"])
+            evaluated_submissions = {}
 
-            def students_per_grade(grade_table):
-                for grade in grade_table:
-                    grade = float(grade) / 5
-                    grade = round(grade * 2) * 0.5
-                    dicgrade[grade] = 1 if grade not in dicgrade else dicgrade[grade] + 1
+            def students_per_grade(grades_per_tasks):
+                for key, value in grades_per_tasks.items():
+                    dicgrade[key] = {}
+                    for grade in value:
+                        grade = float(grade) / 5
+                        grade = round(grade * 2) * 0.5
+                        dicgrade[key][grade] = 1 if grade not in dicgrade else dicgrade[key][grade] + 1
                 return dicgrade
 
-            for stud_id in student_ids:
-                for task_id in task_ids:
+            for task_id in task_ids:
+                evaluated_submissions[task_id] = []
+                for stud_id in student_ids:
                     submissions = list(self.database.submissions.find(
                         {"courseid": courseID, "taskid": task_id, "username": stud_id}).sort(
                         [("submitted_on", pymongo.DESCENDING)]))
                     if len(submissions) > 0:
-                        evaluated_submissions.append(submissions[0]["grade"])
-                    else:
-                        pass
+                        self._logger.info(str(submissions[0]["courseid"]) + " - " + str(submissions[0]["taskid"]) + " - " + str(submissions[0][
+                            "username"]) + " - " + str(submissions[0]["grade"]))
+                        evaluated_submissions[task_id].append(submissions[0]["grade"])
+                        self._logger.info(evaluated_submissions)
+
             table_stud_per_grade = students_per_grade(evaluated_submissions)
             return json.dumps(table_stud_per_grade)
 
     class Diagram2Page(INGIniousAdminPage):
-        def POST(self,courseID):
+        def POST(self, courseID):
             course = self.course_factory.get_course(courseID)
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             data = web.input()
-            task_ids = data["task_ids"].replace("&#39;", "")
-            task_ids = task_ids.replace("[", "")
-            task_ids = task_ids.replace("]", "")
-            task_ids = task_ids.replace(" ", "")
-            task_ids = task_ids.split(",")
+            task_ids = _clean_data(data["task_ids"])
             tasks_data = {}
             tasks_data["nstuds"] = len(self.user_manager.get_course_registered_users(course, False))
             for task_id in task_ids:
@@ -132,7 +133,7 @@ def init(plugin_manager, _, _2, config):
                             "$match":
                                 {
                                     "courseid": courseID,
-                                    "taskid":task_id,
+                                    "taskid": task_id,
                                     "username": {"$in": self.user_manager.get_course_registered_users(course, False)}
                                 }
                         },
@@ -145,7 +146,7 @@ def init(plugin_manager, _, _2, config):
                                     "succeeded": {"$sum": {"$cond": ["$succeeded", 1, 0]}}
                                 }
                         }
-                ]))
+                    ]))
                 tasks_data[task_id] = data
             return json.dumps(tasks_data)
 

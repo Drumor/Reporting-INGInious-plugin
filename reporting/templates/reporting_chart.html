@@ -27,7 +27,7 @@ $#
 
 <!-- Tab panes -->
 <div class="tab-content">
-  <div class="tab-pane container-fluid active" id="home"><canvas id="myChart"></canvas></div>
+  <div class="tab-pane container-fluid active" id="home"></div>
   <div class="tab-pane container-fluid fade" id="menu1"><canvas id="myChart2"></canvas></div>
   <div class="tab-pane container-fluid fade" id="menu2">...</div>
 </div>
@@ -90,7 +90,11 @@ $#
         success: function (result) {
           let json_result = JSON.parse(result);
           if (name ==="diag1"){
-            display_diagram_1(json_result);
+            for (const [title,subdict] of Object.entries(json_result)){
+              $$("#home").append("<canvas id='canvas_"+title+"'></canvas>")
+              display_diagram_1(subdict,title);
+            }
+
           }else if (name === "diag2"){
             display_diagram_2(json_result);
           }else {
@@ -108,7 +112,7 @@ $#
      * Displays of the histogram
      *
      */
-    function display_diagram_1(table_stud_per_note){
+    function display_diagram_1(table_stud_per_note,canvas_name){
 
         //initialisation
         var values = new Array(40);
@@ -130,7 +134,6 @@ $#
           b2=20;
         }
         var dat =[{x:b1,y:0.5},{x:b2,y:0.5}];
-
         var lines = [
                       {
 						type: 'line',
@@ -145,7 +148,7 @@ $#
                     ];
 
 
-        var ctx = document.getElementById('myChart').getContext('2d');
+        var ctx = document.getElementById('canvas_'+canvas_name).getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -164,6 +167,10 @@ $#
                 labels: labels
             },
             options:{
+                title: {
+                  display: true,
+                  text: canvas_name
+                },
                 responsive: true,
                 scales: {
                     xAxes: [{
