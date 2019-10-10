@@ -36,6 +36,25 @@ def add_admin_menu(course):  # pylint: disable=unused-argument
     return ('reporting/', '<i class="fa fa-bar-chart"></i>&nbsp; Reporting')
 
 
+
+
+
+class StaticMockPage(object):
+    # TODO: Replace by shared static middleware and let webserver serve the files
+    def GET(self, path):
+        if not os.path.abspath(PATH_TO_PLUGIN) in os.path.abspath(os.path.join(PATH_TO_PLUGIN, path)):
+            raise web.notfound()
+
+        try:
+            with open(os.path.join(PATH_TO_PLUGIN, "static", path), 'rb') as file:
+                return file.read()
+        except:
+            raise web.notfound()
+
+    def POST(self, path):
+        return self.GET(path)
+
+
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
 
@@ -110,8 +129,10 @@ def init(plugin_manager, _, _2, config):
                         {"courseid": courseID, "taskid": task_id, "username": stud_id}).sort(
                         [("submitted_on", pymongo.DESCENDING)]))
                     if len(submissions) > 0:
-                        self._logger.info(str(submissions[0]["courseid"]) + " - " + str(submissions[0]["taskid"]) + " - " + str(submissions[0][
-                            "username"]) + " - " + str(submissions[0]["grade"]))
+                        self._logger.info(
+                            str(submissions[0]["courseid"]) + " - " + str(submissions[0]["taskid"]) + " - " + str(
+                                submissions[0][
+                                    "username"]) + " - " + str(submissions[0]["grade"]))
                         evaluated_submissions[task_id].append(submissions[0]["grade"])
                         self._logger.info(evaluated_submissions)
 
@@ -150,6 +171,7 @@ def init(plugin_manager, _, _2, config):
                 tasks_data[task_id] = data
             return json.dumps(tasks_data)
 
+    plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
     plugin_manager.add_page("/admin/([^/]+)/reporting/", ReportingPage)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag1", Diagram1Page)
