@@ -135,7 +135,6 @@ def init(plugin_manager, _, _2, config):
                         evaluated_submissions[task_id].append(submissions[0]["grade"])
 
             table_stud_per_grade = students_per_grade(evaluated_submissions)
-            self._logger.info(table_stud_per_grade)
             return json.dumps(table_stud_per_grade)
 
     class Diagram2Page(INGIniousAdminPage):
