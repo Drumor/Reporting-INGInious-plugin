@@ -119,7 +119,10 @@ def init(plugin_manager, _, _2, config):
                     for grade in value:
                         grade = float(grade) / 5
                         grade = round(grade * 2) * 0.5
-                        dicgrade[key][grade] = 1 if grade not in dicgrade else dicgrade[key][grade] + 1
+                        if grade not in dicgrade[key]:
+                            dicgrade[key][grade] = 1
+                        else:
+                            dicgrade[key][grade] = dicgrade[key][grade] + 1
                 return dicgrade
 
             for task_id in task_ids:
@@ -129,14 +132,10 @@ def init(plugin_manager, _, _2, config):
                         {"courseid": courseID, "taskid": task_id, "username": stud_id}).sort(
                         [("submitted_on", pymongo.DESCENDING)]))
                     if len(submissions) > 0:
-                        self._logger.info(
-                            str(submissions[0]["courseid"]) + " - " + str(submissions[0]["taskid"]) + " - " + str(
-                                submissions[0][
-                                    "username"]) + " - " + str(submissions[0]["grade"]))
                         evaluated_submissions[task_id].append(submissions[0]["grade"])
-                        self._logger.info(evaluated_submissions)
 
             table_stud_per_grade = students_per_grade(evaluated_submissions)
+            self._logger.info(table_stud_per_grade)
             return json.dumps(table_stud_per_grade)
 
     class Diagram2Page(INGIniousAdminPage):
