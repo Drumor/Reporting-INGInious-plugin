@@ -125,6 +125,9 @@ def init(plugin_manager, _, _2, config):
                             dicgrade[key][grade] = dicgrade[key][grade] + 1
                 return dicgrade
 
+            if student_ids == ['']:
+                student_ids = (self.database.aggregations.find_one({"courseid": courseID}, {"students":1}))
+                student_ids = student_ids["students"]
             for task_id in task_ids:
                 evaluated_submissions[task_id] = []
                 for stud_id in student_ids:
