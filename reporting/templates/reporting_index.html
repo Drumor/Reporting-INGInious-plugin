@@ -15,7 +15,7 @@ $#
             <div class="col-md-6">
                 <h2>Students
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" id="select_all_students">Select all</button>
+                        <button type="button" class="btn btn-primary" data-state="unselect" id="select_all_students">Select all</button>
                     </div>
                 </h2>
                 <div class="form-check">
@@ -27,7 +27,7 @@ $#
                 <h2>
                     Tasks
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" id="select_all_tasks">Select all</button>
+                        <button type="button" class="btn btn-primary" data-state="unselect" id="select_all_tasks">Select all</button>
                     </div>
                 </h2>
                 <div class="form-check">
@@ -43,11 +43,29 @@ $#
 <script>
     $$( document ).ready(function() {
         $$('#select_all_students').click(function(){
-            $$('.checkbox-user').prop('checked',true);
+            if ($$(this).data("state")==="unselect"){
+                $$('.checkbox-user').prop('checked',true);
+                $$(this).data("state","select");
+                $$(this).html("Unselect all");
+            }else{
+                $$('.checkbox-user').prop('checked',false);
+                $$(this).data("state","unselect");
+                $$(this).html("Select all");
+            }
+
+
         });
 
         $$('#select_all_tasks').click(function(){
-            $$('.checkbox-task').prop('checked',true);
+            if ($$(this).data("state")==="unselect"){
+                $$('.checkbox-task').prop('checked',true);
+                $$(this).data("state","select");
+                $$(this).html("Unselect all");
+            }else{
+                $$('.checkbox-task').prop('checked',false);
+                $$(this).data("state","unselect");
+                $$(this).html("Select all");
+            }
         });
     });
 </script>
