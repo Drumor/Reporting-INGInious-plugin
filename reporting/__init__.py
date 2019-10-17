@@ -33,7 +33,7 @@ PATH_TO_PLUGIN = os.path.abspath(os.path.dirname(__file__))
 
 def add_admin_menu(course):  # pylint: disable=unused-argument
     """ Add a menu for jplag analyze in the administration """
-    return ('reporting/', '<i class="fa fa-bar-chart"></i>&nbsp; Reporting')
+    return 'reporting', '<i class="fa fa-bar-chart"></i>&nbsp; Reporting'
 
 
 
