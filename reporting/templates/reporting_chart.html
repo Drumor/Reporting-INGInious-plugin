@@ -90,7 +90,7 @@ $var Navbar: $:NavbarF()
      */
 
     function diagram_request(name) {
-      const url = window.location.href + name;
+      const url = window.location.href +"/"+ name;
       $$.ajax({
         url: url,
         data: {
