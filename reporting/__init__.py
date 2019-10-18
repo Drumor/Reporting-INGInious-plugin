@@ -36,9 +36,6 @@ def add_admin_menu(course):  # pylint: disable=unused-argument
     return 'reporting', '<i class="fa fa-bar-chart"></i>&nbsp; Reporting'
 
 
-
-
-
 class StaticMockPage(object):
     # TODO: Replace by shared static middleware and let webserver serve the files
     def GET(self, path):
@@ -112,6 +109,8 @@ def init(plugin_manager, _, _2, config):
             student_ids = _clean_data(data["student_ids"])
             task_ids = _clean_data(data["task_ids"])
             evaluated_submissions = {}
+            for task_id in task_ids:
+                evaluated_submissions[task_id] = []
 
             def students_per_grade(grades_per_tasks):
                 for key, value in grades_per_tasks.items():
@@ -126,16 +125,31 @@ def init(plugin_manager, _, _2, config):
                 return dicgrade
 
             if student_ids == ['']:
-                student_ids = (self.database.aggregations.find_one({"courseid": courseID}, {"students":1}))
+                student_ids = (self.database.aggregations.find_one({"courseid": courseID}, {"students": 1}))
                 student_ids = student_ids["students"]
-            for task_id in task_ids:
-                evaluated_submissions[task_id] = []
-                for stud_id in student_ids:
-                    submissions = list(self.database.submissions.find(
-                        {"courseid": courseID, "taskid": task_id, "username": stud_id}).sort(
-                        [("submitted_on", pymongo.DESCENDING)]))
-                    if len(submissions) > 0:
-                        evaluated_submissions[task_id].append(submissions[0]["grade"])
+
+            subs = list(self.database.submissions.aggregate(
+                [
+                    {
+                        "$match": {"$and": [
+                            {"taskid": {"$in": task_ids}, "username": {"$in": student_ids}, "courseid": courseID}]}
+                    },
+                    {
+                        "$group":
+                            {
+                                "_id": {
+                                    "username": "$username",
+                                    "taskid": "$taskid",
+                                    "courseid": "$courseid"
+                                },
+                                "grade": {"$last": "$grade"},
+                                "submitted_on": {"$last": "$submitted_on"}
+                            }
+                    }
+                ]
+            ))
+            for sub in subs:
+                evaluated_submissions[sub["_id"]["taskid"]].append(sub["grade"])
 
             table_stud_per_grade = students_per_grade(evaluated_submissions)
             return json.dumps(table_stud_per_grade)
