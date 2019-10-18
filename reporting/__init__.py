@@ -79,6 +79,8 @@ def init(plugin_manager, _, _2, config):
             tasks = c.get_tasks()
 
             self._logger.info("Rendering selection page")
+            for task in tasks:
+                setattr(tasks[task], "name", tasks[task].get_name(self.user_manager.session_language()))
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").reporting_index(users,
                                                                                                             tasks, c)
 
@@ -86,6 +88,7 @@ def init(plugin_manager, _, _2, config):
             """POST REQUEST - Allows display of the diagram"""
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             course = self.course_factory.get_course(courseID)
+            tasks = course.get_tasks()
             student_ids = []
             task_ids = []
             x = web.input()
@@ -97,15 +100,17 @@ def init(plugin_manager, _, _2, config):
 
             student_ids = (str(student_ids)).encode("ascii").decode()
             task_ids = ",".join(task_ids)
+            task_titles = {}
+            for task_id in tasks:
+                task_titles[task_id]= tasks[task_id].get_name(self.user_manager.session_language())
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/") \
-                .reporting_chart(course, student_ids, task_ids)
+                .reporting_chart(course, student_ids, task_ids,task_titles)
 
     class Diagram1Page(INGIniousAdminPage):
         def POST(self, courseID):
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             dicgrade = {}
             data = web.input()
-
             student_ids = _clean_data(data["student_ids"])
             task_ids = _clean_data(data["task_ids"])
             evaluated_submissions = {}

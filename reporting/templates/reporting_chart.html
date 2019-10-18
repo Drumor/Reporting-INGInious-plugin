@@ -1,4 +1,4 @@
-$def with(course,stud_ids,task_ids)
+$def with(course,stud_ids,task_ids,task_titles)
 $var title: Reporting
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
@@ -41,6 +41,10 @@ $var Navbar: $:NavbarF()
   <div class="tab-pane container-fluid active" id="home"></div>
   <div class="tab-pane container-fluid fade" id="menu1"><canvas id="myChart2"></canvas></div>
   <div class="tab-pane container-fluid fade" id="menu2">...</div>
+</div>
+<div style="display: none">
+    $for elem in task_titles:
+        <p id="$elem">$task_titles[elem]</p>
 </div>
 
 
@@ -102,8 +106,9 @@ $var Navbar: $:NavbarF()
           let json_result = JSON.parse(result);
           if (name ==="diag1"){
             for (const [title,subdict] of Object.entries(json_result)){
-              $$("#home").append("<canvas id='canvas_"+title+"'></canvas>")
-              display_diagram_1(subdict,title);
+              $$("#home").append("<canvas id='canvas_"+title+"'></canvas>");
+              title_text = $$("#"+title).text();
+              display_diagram_1(subdict,title,title_text);
             }
 
           }else if (name === "diag2"){
@@ -123,7 +128,7 @@ $var Navbar: $:NavbarF()
      * Displays of the histogram
      *
      */
-    function display_diagram_1(table_stud_per_note,canvas_name){
+    function display_diagram_1(table_stud_per_note,canvas_name,title){
 
         //initialisation
         var values = new Array(40);
@@ -180,7 +185,7 @@ $var Navbar: $:NavbarF()
             options:{
                 title: {
                   display: true,
-                  text: canvas_name
+                  text: title
                 },
                 responsive: true,
                 scales: {
@@ -190,7 +195,7 @@ $var Navbar: $:NavbarF()
                         scaleLabel: {
                             display: true,
                             labelString: 'Note'
-                        },
+                        }
                     }],
                     yAxes: [{
                         display: true,
@@ -218,7 +223,9 @@ $var Navbar: $:NavbarF()
       let viewed =[];
       let attempted = [];
       let succeeded = [];
+      let title_text = [];
       for (task_id of task_ids){
+          title_text.push($$("#"+task_id).text());
           viewed.push(table_per_task[task_id][0]["viewed"]);
           attempted.push(table_per_task[task_id][0]["attempted"]);
           succeeded.push(table_per_task[task_id][0]["succeeded"]);
@@ -258,7 +265,7 @@ $var Navbar: $:NavbarF()
             data: succeeded
         }
     ],
-                labels: task_ids
+                labels: title_text
             },
             options:{
                 responsive: true,
@@ -270,6 +277,11 @@ $var Navbar: $:NavbarF()
                             display: true,
                             labelString: 'Task'
                         },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 90,
+                            minRotation: 90
+                        }
                     }],
                     yAxes: [{
                       id : 'y-axis-label',

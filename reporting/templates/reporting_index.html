@@ -43,7 +43,7 @@ $var Navbar: $:NavbarF()
                 </h2>
                 <div class="form-check">
                     $for elem in tasks:
-                     <input type="checkbox" class="form-check-input checkbox-task" name="task_id_$elem" value="$elem">$elem<br>
+                     <input type="checkbox" class="form-check-input checkbox-task" name="task_id_$elem" value="$elem">$tasks[elem].name<br>
                 </div>
 
             </div>
