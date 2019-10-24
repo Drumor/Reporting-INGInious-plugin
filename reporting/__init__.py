@@ -24,7 +24,7 @@ import logging
 import pymongo
 import web
 
-from inginious.frontend.pages.course_admin.utils import INGIniousAdminPage
+from inginious.frontend.pages.course_admin.utils import INGIniousSubmissionAdminPage
 
 """ A plugin that displays beautiful reporting widgets """
 
@@ -63,50 +63,45 @@ def init(plugin_manager, _, _2, config):
         cleaned = cleaned.split(",")
         return cleaned
 
-    class ReportingPage(INGIniousAdminPage):
+    class ReportingPage(INGIniousSubmissionAdminPage):
         """Page to allow user choose students and tasks from the course and then display a report diagram"""
 
-        def GET(self, courseID):
-            """GET REQUEST - Allows students and tasks selection"""
-            self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
-            self._logger.info("Starting Reporting plugin")
+        def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
+            """ GET request """
+            course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
+            return self.show_page(course, web.input())
 
-            c = self.course_factory.get_course(courseID)
-            users = sorted(list(
-                self.user_manager.get_users_info(self.user_manager.get_course_registered_users(c, False)).items()),
-                key=lambda k: k[1][0] if k[1] is not None else "")
-
-            tasks = c.get_tasks()
-
-            self._logger.info("Rendering selection page")
-            for task in tasks:
-                setattr(tasks[task], "name", tasks[task].get_name(self.user_manager.session_language()))
-            return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").reporting_index(users,
-                                                                                                            tasks, c)
-
-        def POST(self, courseID):
+        def POST_AUTH(self, courseID):
             """POST REQUEST - Allows display of the diagram"""
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             course = self.course_factory.get_course(courseID)
             tasks = course.get_tasks()
-            student_ids = []
-            task_ids = []
-            x = web.input()
-            for key in x:
-                if key.startswith("student"):
-                    student_ids.append(x[key])
-                else:
-                    task_ids.append(x[key])
-
-            student_ids = (str(student_ids)).encode("ascii").decode()
-            task_ids = ",".join(task_ids)
+            x = web.input(tasks=[], users=[])
+            student_ids = str(x["users"]).encode("ascii").decode()
+            task_ids = ",".join(x["tasks"])
             task_titles = {}
             for task_id in tasks:
-                task_titles[task_id]= tasks[task_id].get_name(self.user_manager.session_language())
+                task_titles[task_id] = tasks[task_id].get_name(self.user_manager.session_language())
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/") \
-                .reporting_chart(course, student_ids, task_ids,task_titles)
+                .reporting_chart(course, student_ids, task_ids, task_titles)
 
-    class Diagram1Page(INGIniousAdminPage):
+        def show_page(self, course, user_input, msg="", error=False):
+            # Load task list
+            tasks, user_data, aggregations, tutored_aggregations, \
+            tutored_users, checked_tasks, checked_users, show_aggregations = self.show_page_params(course, user_input)
+
+            return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").reporting_index(course,
+                                                                                                            tasks,
+                                                                                                            user_data,
+                                                                                                            aggregations,
+                                                                                                            tutored_aggregations,
+                                                                                                            tutored_users,
+                                                                                                            checked_tasks,
+                                                                                                            checked_users,
+                                                                                                            show_aggregations,
+                                                                                                            msg, error)
+
+    class Diagram1Page(INGIniousSubmissionAdminPage):
         def POST(self, courseID):
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             dicgrade = {}
@@ -159,7 +154,7 @@ def init(plugin_manager, _, _2, config):
             table_stud_per_grade = students_per_grade(evaluated_submissions)
             return json.dumps(table_stud_per_grade)
 
-    class Diagram2Page(INGIniousAdminPage):
+    class Diagram2Page(INGIniousSubmissionAdminPage):
         def POST(self, courseID):
             course = self.course_factory.get_course(courseID)
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")

@@ -1,4 +1,4 @@
-$def with(users,tasks,course)
+$def with(course,tasks,user_data,aggregations,tutored_aggregations,tutored_users,checked_tasks,checked_users,show_aggregations,msg, error)
 $var title: Reporting
 
 $var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
@@ -19,64 +19,13 @@ $def NavbarF():
     </nav>
 $var Navbar: $:NavbarF()
 
+$ use_classrooms = course.use_classrooms()
+
 <h1>Reporting - Select datas</h1>
 <form method="POST">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Students
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" data-state="unselect" id="select_all_students">Select all</button>
-                    </div>
-                </h2>
-                <div class="form-check">
-                    $for elem in users:
-                     <input type="checkbox" class="form-check-input checkbox-user" name="student_id_$elem[0]" value="$elem[0]">$elem[1][0]<br>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <h2>
-                    Tasks
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" data-state="unselect" id="select_all_tasks">Select all</button>
-                    </div>
-                </h2>
-                <div class="form-check">
-                    $for elem in tasks:
-                     <input type="checkbox" class="form-check-input checkbox-task" name="task_id_$elem" value="$elem">$tasks[elem].name<br>
-                </div>
+    $:include.course_admin.submissions_tabs.tasks(tasks, checked_tasks, "reporting")
+    $:include.course_admin.submissions_tabs.users(user_data, aggregations, tutored_aggregations, tutored_users, checked_users, show_aggregations, use_classrooms)
 
-            </div>
-        </div>
-    </div>
+
     <button class="form-control" type="submit">Make report</button>
 </form>
-<script>
-    $$( document ).ready(function() {
-        $$('#select_all_students').click(function(){
-            if ($$(this).data("state")==="unselect"){
-                $$('.checkbox-user').prop('checked',true);
-                $$(this).data("state","select");
-                $$(this).html("Unselect all");
-            }else{
-                $$('.checkbox-user').prop('checked',false);
-                $$(this).data("state","unselect");
-                $$(this).html("Select all");
-            }
-
-
-        });
-
-        $$('#select_all_tasks').click(function(){
-            if ($$(this).data("state")==="unselect"){
-                $$('.checkbox-task').prop('checked',true);
-                $$(this).data("state","select");
-                $$(this).html("Unselect all");
-            }else{
-                $$('.checkbox-task').prop('checked',false);
-                $$(this).data("state","unselect");
-                $$(this).html("Select all");
-            }
-        });
-    });
-</script>
