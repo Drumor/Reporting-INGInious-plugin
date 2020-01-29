@@ -19,7 +19,7 @@
 from setuptools import setup,find_packages
 
 retval = setup(
-    name='reporting',
+    name='INGInious-reporting',
     version="0.1",
     author="Ludovic Taffin",
     author_email = "ludovic.taffin@uclouvain.be",
