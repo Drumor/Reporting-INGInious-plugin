@@ -1,4 +1,4 @@
-$def with(course,tasks,user_data,audiences,tutored_audiences,tutored_users,checked_tasks,checked_users,show_audiences,msg, error)
+$def with(course,tasks,users,audiences,tutored_audiences,tutored_users,old_params,msg, error)
 $var title: Reporting
 
 $var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
@@ -21,9 +21,7 @@ $var Navbar: $:NavbarF()
 
 <h1>Reporting - Select datas</h1>
 <form method="POST">
-    $:include.course_admin.submissions_tabs.tasks(tasks, checked_tasks, "reporting")
-    $:include.course_admin.submissions_tabs.users(user_data, audiences, tutored_audiences, tutored_users, checked_users, show_audiences)
+    $:include.course_admin.submissions_tabs.query(course, users, tutored_users, audiences, tutored_audiences, tasks, old_params, "stats#alerts", True)
 
-
-    <button class="form-control" type="submit">Make report</button>
+    <!--<button class="form-control" type="submit">Make report</button>-->
 </form>

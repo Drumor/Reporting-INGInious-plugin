@@ -32,7 +32,7 @@ $var Navbar: $:NavbarF()
     <a class="nav-link" id="diag2"  data-toggle="tab" href="#menu1">Diagram 2</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="diag3"  data-toggle="tab" href="#menu2">Diagram 3</a>
+    <a class="nav-link" id="diag3"  data-toggle="tab" href="#menu2">Suspicious</a>
   </li>
 </ul>
 
@@ -40,7 +40,7 @@ $var Navbar: $:NavbarF()
 <div class="tab-content">
   <div class="tab-pane container-fluid active" id="home"></div>
   <div class="tab-pane container-fluid fade" id="menu1"><canvas id="myChart2"></canvas></div>
-  <div class="tab-pane container-fluid fade" id="menu2">...</div>
+  <div class="tab-pane container-fluid fade" id="menu2"><table id="sub_table" class="table"></table></div>
 </div>
 <div style="display: none">
     $for elem in task_titles:
@@ -113,6 +113,8 @@ $var Navbar: $:NavbarF()
 
           }else if (name === "diag2"){
             display_diagram_2(json_result);
+          }else if (name === "diag3"){
+            display_diagram_3(json_result);
           }else {
             console.log("none");
           }
@@ -304,13 +306,40 @@ $var Navbar: $:NavbarF()
         });
     }
 
+    function display_diagram_3(json_result){
+        for (var student in json_result){
+            $$('#sub_table').html('<thead id="table_header" class="table-borderless"><tr><th>Student - Course Duration</th></tr></thead>');
+            cols = Object.keys(json_result[student]).length;
+            for (var task in json_result[student]){
+                $$('#table_header').find('tr').append('<th colspan="2">'+task+'</th>');
+            }
+            break;
+        }
+        $$('#sub_table').append('<tbody id="table_body"></tbody>');
+        for (var student in json_result){
+            $$('#table_body').append('<tr id="'+student+'" class="table-bordered"><td><a href="$get_homepath()/admin/$course.get_id()/student/'+student+'">'+student+'</a> - '+ json_result[student]["course_time"] +'</td></tr>');
+            for (var task in json_result[student]["tasks"]){
+                if (json_result[student]["tasks"][task]["count"] < 3 && json_result[student]["tasks"][task]["grade"]===100){
+                    $$('#'+student+'').append('<td class="bg-danger">'+ json_result[student]["tasks"][task]["count"] +'</td>');
+
+                }else{
+                    $$('#'+student+'').append('<td>'+ json_result[student]["tasks"][task]["count"] +'</td>');
+
+                }
+                $$('#'+student+'').append('<td>'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
+            }
+        }
+    }
+
     $$( document ).ready(function() {
        diagram_request("diag1");
-
     });
 
     $$("#diag2").click(function () {
         diagram_request("diag2");
+    })
+    $$("#diag3").click(function () {
+        diagram_request("diag3");
     })
 
 </script>

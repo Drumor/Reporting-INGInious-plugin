@@ -21,10 +21,9 @@ import os
 
 import logging
 
-import pymongo
 import web
 
-from inginious.frontend.pages.course_admin.utils import INGIniousSubmissionAdminPage
+from inginious.frontend.pages.course_admin.utils import INGIniousSubmissionsAdminPage
 
 """ A plugin that displays beautiful reporting widgets """
 
@@ -63,13 +62,20 @@ def init(plugin_manager, _, _2, config):
         cleaned = cleaned.split(",")
         return cleaned
 
-    class ReportingPage(INGIniousSubmissionAdminPage):
+    class ReportingPage(INGIniousSubmissionsAdminPage):
         """Page to allow user choose students and tasks from the course and then display a report diagram"""
 
         def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
             """ GET request """
-            course, __ = self.get_course_and_check_rights(courseid, allow_all_staff=False)
-            return self.show_page(course, web.input())
+            course = self.course_factory.get_course(courseid)
+            user_input = web.input(
+                users=[],
+                audiences=[],
+                tasks=[],
+                org_tags=[]
+            )
+            params = self.get_input_params(user_input, course, 500)
+            return self.show_page(course, params)
 
         def POST_AUTH(self, courseID):
             """POST REQUEST - Allows display of the diagram"""
@@ -87,21 +93,21 @@ def init(plugin_manager, _, _2, config):
 
         def show_page(self, course, user_input, msg="", error=False):
             # Load task list
-            tasks, user_data, aggregations, tutored_aggregations, \
-            tutored_users, checked_tasks, checked_users, show_aggregations = self.show_page_params(course, user_input)
+            #tasks, user_data, aggregations, tutored_aggregations, \
+            #tutored_users, checked_tasks, checked_users, show_aggregations = self.show_page_params(course, user_input)
+            users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, user_input)
 
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").reporting_index(course,
                                                                                                             tasks,
-                                                                                                            user_data,
-                                                                                                            aggregations,
-                                                                                                            tutored_aggregations,
+                                                                                                            users,
+                                                                                                            audiences,
+                                                                                                            tutored_audiences,
                                                                                                             tutored_users,
-                                                                                                            checked_tasks,
-                                                                                                            checked_users,
-                                                                                                            show_aggregations,
+                                                                                                            user_input,
                                                                                                             msg, error)
 
-    class Diagram1Page(INGIniousSubmissionAdminPage):
+    class Diagram1Page(INGIniousSubmissionsAdminPage):
+
         def POST(self, courseID):
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             dicgrade = {}
@@ -154,7 +160,7 @@ def init(plugin_manager, _, _2, config):
             table_stud_per_grade = students_per_grade(evaluated_submissions)
             return json.dumps(table_stud_per_grade)
 
-    class Diagram2Page(INGIniousSubmissionAdminPage):
+    class Diagram2Page(INGIniousSubmissionsAdminPage):
         def POST(self, courseID):
             course = self.course_factory.get_course(courseID)
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
@@ -186,9 +192,49 @@ def init(plugin_manager, _, _2, config):
                 tasks_data[task_id] = data
             return json.dumps(tasks_data)
 
+    class Diagram3Page(INGIniousSubmissionsAdminPage):
+        def _per_task_submission_count_and_grade(self, username, tasks):
+            task_count_sub = {}
+            first_sub_date = None
+            last_sub_date = None
+            for task in tasks:
+                submissions = self.database.submissions.find({"username": username, "taskid": task})
+                grade = self.database.user_tasks.find_one({"username": username, "taskid": task})["grade"]
+                submissions_count = submissions.count()
+                task_count_sub[task] = {"count": submissions_count, "grade": grade}
+            return task_count_sub
+
+        def POST(self, courseid):
+            # get course
+            course = self.course_factory.get_course(courseid)
+            # get tasks
+            tasks = course.get_tasks()
+            # get students of the course
+            students = self.user_manager.get_course_registered_users(course, False)
+            # get number of submissions per student per task
+            users_submissions = {}
+            for student in students:
+                users_submissions[student] = {}
+                users_submissions[student]["tasks"] = self._per_task_submission_count_and_grade(student, tasks)
+                submissions = list(self.database.submissions.aggregate([
+                    {
+                        "$match":
+                            {
+                                "courseid": courseid,
+                                "username": student
+                            }
+                    },
+                    {'$sort': {'submitted_on': 1}},
+                    {'$group': {'_id': None, 'first': {'$first': '$submitted_on'}, 'last': {'$last': '$submitted_on'}}}
+                ]))
+                users_submissions[student]["course_time"] = str(abs((submissions[0]["first"] - submissions[0]["last"])))
+            print(users_submissions)
+            return json.dumps(users_submissions)
+
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
     plugin_manager.add_page("/admin/([^/]+)/reporting", ReportingPage)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag1", Diagram1Page)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag2", Diagram2Page)
+    plugin_manager.add_page("/admin/([^/]+)/reporting/diag3", Diagram3Page)
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)
