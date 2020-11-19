@@ -40,7 +40,30 @@ $var Navbar: $:NavbarF()
 <div class="tab-content">
   <div class="tab-pane container-fluid active" id="home"></div>
   <div class="tab-pane container-fluid fade" id="menu1"><canvas id="myChart2"></canvas></div>
-  <div class="tab-pane container-fluid fade" id="menu2"><table id="sub_table" class="table"></table></div>
+  <div class="tab-pane container-fluid fade" id="menu2">
+        <div class="card mb-3 section">
+            <div id="query_header" class="card-header">
+                <span class="title"> Filters </span>
+            </div>
+
+            <div class="card-body content">
+              <div class="form-group">
+                <label for="duration_input">Duration filter (less than ...)</label>
+                <input id="duration_input" type="number" min="1" placeholder="Minutes">
+              </div>
+              <div class="form-group">
+                <label for="min_sub_input">Submissions filter (less than ...)</label>
+                <input id="min_sub_input" type="number" min="1" placeholder="# submissions">
+              </div>
+              <div class="form-group">
+                <label for="task_answered_input">Number of tasks answered (at least ...)</label>
+                <input id="task_answered_input" type="number" min="1" placeholder="# tasks">
+              </div>
+            </div>
+        </div>
+
+      <table id="sub_table" class="table"></table>
+  </div>
 </div>
 <div style="display: none">
     $for elem in task_titles:
@@ -234,39 +257,39 @@ $var Navbar: $:NavbarF()
       }
 
       var line = [
-                      {
-						type: 'line',
-                        label:{content:'Total Students',enabled:true,fontColor: "#000",backgroundColor:'red',cornerRadius: 0,position:"bottom"},
-						mode: 'horizontal',
-						scaleID: 'y-axis-label',
-						value: nstuds,
-						borderColor: 'red',
-						borderWidth: 1,
+          {
+            type: 'line',
+            label:{content:'Total Students',enabled:true,fontColor: "#000",backgroundColor:'red',cornerRadius: 0,position:"bottom"},
+            mode: 'horizontal',
+            scaleID: 'y-axis-label',
+            value: nstuds,
+            borderColor: 'red',
+            borderWidth: 1,
 
-                      }
-                    ];
+          }
+      ];
 
       var ctx = document.getElementById('myChart2').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
                 datasets: [
-        {
-            label: "Viewed",
-            backgroundColor: "blue",
-            data: viewed
-        },
-        {
-            label: "Attempted",
-            backgroundColor: "red",
-            data: attempted
-        },
-        {
-            label: "Succeeded",
-            backgroundColor: "green",
-            data: succeeded
-        }
-    ],
+                    {
+                        label: "Viewed",
+                        backgroundColor: "blue",
+                        data: viewed
+                    },
+                    {
+                        label: "Attempted",
+                        backgroundColor: "red",
+                        data: attempted
+                    },
+                    {
+                        label: "Succeeded",
+                        backgroundColor: "green",
+                        data: succeeded
+                    }
+                ],
                 labels: title_text
             },
             options:{
@@ -307,28 +330,101 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_3(json_result){
+        $$('#sub_table').html('<thead id="table_header" class="table-borderless"><tr id="table_id_labels"><th></th><th></th></tr></thead>');
+        $$('#table_header').append('<tr id="table_labels"><th>Student</th><th>Course Duration</th></tr>');
         for (var student in json_result){
-            $$('#sub_table').html('<thead id="table_header" class="table-borderless"><tr><th>Student - Course Duration</th></tr></thead>');
             cols = Object.keys(json_result[student]).length;
-            for (var task in json_result[student]){
-                $$('#table_header').find('tr').append('<th colspan="2">'+task+'</th>');
+            for (var task in json_result[student]["tasks"]){
+                $$('#table_id_labels').append('<th colspan="2">'+task+'</th>');
+                $$('#table_labels').append('<th># submissions</th><th>grade</th>');
             }
             break;
         }
+        $$('#table_id_labels').append('<th></th>');
+        $$('#table_labels').append('<th>Total</th>');
+
+        //
         $$('#sub_table').append('<tbody id="table_body"></tbody>');
         for (var student in json_result){
-            $$('#table_body').append('<tr id="'+student+'" class="table-bordered"><td><a href="$get_homepath()/admin/$course.get_id()/student/'+student+'">'+student+'</a> - '+ json_result[student]["course_time"] +'</td></tr>');
+            var mins = ((json_result[student]["course_time"]["days"]*60+json_result[student]["course_time"]["hours"])*60+json_result[student]["course_time"]["minutes"]);
+            $$('#table_body').append('<tr id="'+student+'" class="table-borderless stud" data-nb_task="'+ json_result[student]["nb_task"] +'" data-minutes="'+mins+'">' +
+                '<td><a href="$get_homepath()/admin/$course.get_id()/student/'+student+'">'+student+'</a></td><td class="course_duration">'
+                                +json_result[student]["course_time"]["days"]+' days '
+                                +json_result[student]["course_time"]["hours"]+' hours '
+                                +json_result[student]["course_time"]["minutes"]+' minutes '
+                                +json_result[student]["course_time"]["seconds"]+' seconds</td></tr>');
             for (var task in json_result[student]["tasks"]){
                 if (json_result[student]["tasks"][task]["count"] < 3 && json_result[student]["tasks"][task]["grade"]===100){
-                    $$('#'+student+'').append('<td class="bg-danger">'+ json_result[student]["tasks"][task]["count"] +'</td>');
-
+                    $$('#'+student+'').append('<td class="bg-danger sub_count" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
+                    $$('#'+student+'').append('<td class="bg-danger">'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
                 }else{
-                    $$('#'+student+'').append('<td>'+ json_result[student]["tasks"][task]["count"] +'</td>');
-
+                    $$('#'+student+'').append('<td class="sub_count" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
+                    $$('#'+student+'').append('<td>'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
                 }
-                $$('#'+student+'').append('<td>'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
+
             }
+            $$('#'+student+'').append('<td>'+ json_result[student]["total"] +'%</td>');
         }
+    }
+    function filter_duration(minutes,duration_val){
+        return parseInt(minutes) <= parseInt(duration_val);
+    }
+
+    function filter_task_answered(nb_task,task_val){
+        return parseInt(nb_task) <= parseInt(task_val);
+    }
+
+    function filter_submissions(table_id, sub_val) {
+        var count = 0;
+        $$('#'+table_id+' tr.stud td.sub_count').each(function () {
+            if ($$(this).data('count') <= sub_val) {
+                count++;
+            }
+        });
+        return count > 0;
+    }
+
+    function filter(){
+        var duration_val = $$('#duration_input').val();
+        var task_val = $$('#task_answered_input').val();
+        var sub_val = $$('#min_sub_input').val();
+
+        $$('#sub_table tr.stud').each(function(){
+            var show;
+            var minutes = $$(this).data("minutes");
+            var nb_task = $$(this).data("nb_task");
+            if (duration_val !=="" && task_val!=="" && sub_val!==""){
+                //triple filter
+                show =filter_submissions("sub_table",sub_val) && filter_duration(minutes,duration_val) && filter_task_answered(nb_task,task_val);
+            }else if (duration_val ==="" && task_val!=="" && sub_val !==""){
+                //filter without duration
+                show =filter_submissions("sub_table",sub_val) && filter_task_answered(nb_task,task_val);
+            }else if (duration_val !=="" && task_val!=="" && sub_val !==""){
+                //filter without task
+                show =filter_submissions("sub_table",sub_val) && filter_duration(minutes,duration_val);
+            }else if (duration_val !=="" && task_val!=="" && sub_val ===""){
+                //filter without submissions
+                show = filter_duration(minutes,duration_val) && filter_task_answered(nb_task,task_val);
+            }else if (duration_val ==="" && task_val==="" && sub_val !==""){
+                //filter only submissions
+                show = filter_submissions("sub_table",sub_val);
+            }else if (duration_val !=="" && task_val==="" && sub_val ===""){
+                //filter only duration
+                show = filter_duration(minutes,duration_val);
+            }else if (duration_val ==="" && task_val!=="" && sub_val ===""){
+                //filter only task
+                show = filter_task_answered(nb_task,task_val);
+
+            }else{
+                show=true;
+            }
+            if (show){
+                $$(this).show();
+            }else{
+                $$(this).hide();
+            }
+
+        });
     }
 
     $$( document ).ready(function() {
@@ -340,6 +436,14 @@ $var Navbar: $:NavbarF()
     })
     $$("#diag3").click(function () {
         diagram_request("diag3");
+        $$('#duration_input').on("change",function () {
+            filter();
+        });
+        $$('#task_answered_input').on("change",function () {
+            filter();
+        });
+        $$('#min_sub_input').on("change",function () {
+            filter();
+        });
     })
-
 </script>

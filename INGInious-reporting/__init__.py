@@ -214,8 +214,15 @@ def init(plugin_manager, _, _2, config):
             # get number of submissions per student per task
             users_submissions = {}
             for student in students:
+                total =0
+                nb_task =0
                 users_submissions[student] = {}
                 users_submissions[student]["tasks"] = self._per_task_submission_count_and_grade(student, tasks)
+                for task_result in users_submissions[student]["tasks"]:
+                    total += users_submissions[student]["tasks"][task_result]["grade"]
+                    nb_task += 1
+                users_submissions[student]["total"] = int(total/nb_task)
+                users_submissions[student]["nb_task"] = nb_task
                 submissions = list(self.database.submissions.aggregate([
                     {
                         "$match":
@@ -227,8 +234,13 @@ def init(plugin_manager, _, _2, config):
                     {'$sort': {'submitted_on': 1}},
                     {'$group': {'_id': None, 'first': {'$first': '$submitted_on'}, 'last': {'$last': '$submitted_on'}}}
                 ]))
-                users_submissions[student]["course_time"] = str(abs((submissions[0]["first"] - submissions[0]["last"])))
-            print(users_submissions)
+                delta = abs((submissions[0]["first"] - submissions[0]["last"]))
+                days = int(delta.days)
+                hours = int(delta.seconds/3600)
+                minutes = int((delta.seconds % 3600)/60)
+                seconds = int((delta.seconds % 3600) % 60)
+
+                users_submissions[student]["course_time"] = {"days": days, "hours": hours, "minutes": minutes, "seconds": seconds}
             return json.dumps(users_submissions)
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
