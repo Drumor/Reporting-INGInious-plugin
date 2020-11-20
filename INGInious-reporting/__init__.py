@@ -193,18 +193,22 @@ def init(plugin_manager, _, _2, config):
             return json.dumps(tasks_data)
 
     class Diagram3Page(INGIniousSubmissionsAdminPage):
-        def _per_task_submission_count_and_grade(self, username, tasks):
+        def _per_task_submission_count_and_grade(self, username, tasks,selected_task_ids):
             task_count_sub = {}
             first_sub_date = None
             last_sub_date = None
             for task in tasks:
-                submissions = self.database.submissions.find({"username": username, "taskid": task})
-                grade = self.database.user_tasks.find_one({"username": username, "taskid": task})["grade"]
-                submissions_count = submissions.count()
-                task_count_sub[task] = {"count": submissions_count, "grade": grade}
+                if task in selected_task_ids:
+                    submissions = self.database.submissions.find({"username": username, "taskid": task})
+                    grade = self.database.user_tasks.find_one({"username": username, "taskid": task})["grade"]
+                    submissions_count = submissions.count()
+                    task_count_sub[task] = {"count": submissions_count, "grade": grade}
             return task_count_sub
 
         def POST(self, courseid):
+            data = web.input()
+            task_ids = _clean_data(data["task_ids"])
+            student_ids = _clean_data(data["student_ids"])
             # get course
             course = self.course_factory.get_course(courseid)
             # get tasks
@@ -214,33 +218,34 @@ def init(plugin_manager, _, _2, config):
             # get number of submissions per student per task
             users_submissions = {}
             for student in students:
-                total =0
-                nb_task =0
-                users_submissions[student] = {}
-                users_submissions[student]["tasks"] = self._per_task_submission_count_and_grade(student, tasks)
-                for task_result in users_submissions[student]["tasks"]:
-                    total += users_submissions[student]["tasks"][task_result]["grade"]
-                    nb_task += 1
-                users_submissions[student]["total"] = int(total/nb_task)
-                users_submissions[student]["nb_task"] = nb_task
-                submissions = list(self.database.submissions.aggregate([
-                    {
-                        "$match":
-                            {
-                                "courseid": courseid,
-                                "username": student
-                            }
-                    },
-                    {'$sort': {'submitted_on': 1}},
-                    {'$group': {'_id': None, 'first': {'$first': '$submitted_on'}, 'last': {'$last': '$submitted_on'}}}
-                ]))
-                delta = abs((submissions[0]["first"] - submissions[0]["last"]))
-                days = int(delta.days)
-                hours = int(delta.seconds/3600)
-                minutes = int((delta.seconds % 3600)/60)
-                seconds = int((delta.seconds % 3600) % 60)
+                if student in student_ids:
+                    total =0
+                    nb_task =0
+                    users_submissions[student] = {}
+                    users_submissions[student]["tasks"] = self._per_task_submission_count_and_grade(student, tasks,task_ids)
+                    for task_result in users_submissions[student]["tasks"]:
+                        total += users_submissions[student]["tasks"][task_result]["grade"]
+                        nb_task += 1
+                    users_submissions[student]["total"] = int(total/nb_task)
+                    users_submissions[student]["nb_task"] = nb_task
+                    submissions = list(self.database.submissions.aggregate([
+                        {
+                            "$match":
+                                {
+                                    "courseid": courseid,
+                                    "username": student
+                                }
+                        },
+                        {'$sort': {'submitted_on': 1}},
+                        {'$group': {'_id': None, 'first': {'$first': '$submitted_on'}, 'last': {'$last': '$submitted_on'}}}
+                    ]))
+                    delta = abs((submissions[0]["first"] - submissions[0]["last"]))
+                    days = int(delta.days)
+                    hours = int(delta.seconds/3600)
+                    minutes = int((delta.seconds % 3600)/60)
+                    seconds = int((delta.seconds % 3600) % 60)
 
-                users_submissions[student]["course_time"] = {"days": days, "hours": hours, "minutes": minutes, "seconds": seconds}
+                    users_submissions[student]["course_time"] = {"days": days, "hours": hours, "minutes": minutes, "seconds": seconds}
             return json.dumps(users_submissions)
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
