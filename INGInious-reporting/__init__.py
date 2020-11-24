@@ -472,7 +472,7 @@ def init(plugin_manager, _, _2, config):
                                 "username": student
                             }
                     },
-                    {'$sort': {'submitted_on': 1}}
+                    {'$sort': {'submitted_on': -1}}
                 ]))
                 first = submissions[0]["submitted_on"]
                 last = submissions[-1]["submitted_on"]
