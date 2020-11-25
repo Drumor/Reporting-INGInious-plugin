@@ -49,15 +49,17 @@ $var Navbar: $:NavbarF()
             <div class="card-body content">
               <div class="form-group">
                 <label for="duration_input">Duration filter (less than ...)</label>
-                <input id="duration_input" type="number" min="1" placeholder="Minutes">
+                <input id="duration_input" type="number" min="1" placeholder="Minutes" class="form-control" aria-describedby="descr_dur">
+                <small id="descr_dur">Time lapse between first and last submission</small>
               </div>
               <div class="form-group">
                 <label for="min_sub_input">Submissions filter (less than ...)</label>
-                <input id="min_sub_input" type="number" min="1" placeholder="# submissions">
+                <input id="min_sub_input" type="number" min="1" placeholder="# submissions" class="form-control" aria-describedby="descr_sub">
+                <small id="descr_sub">Number of submissions per question</small>
               </div>
               <div class="form-group">
                 <label for="task_answered_input">Number of tasks answered (at least ...)</label>
-                <input id="task_answered_input" type="number" min="1" placeholder="# tasks">
+                <input id="task_answered_input" type="number" min="1" max="$len(task_ids.split(','))" placeholder="# tasks" class="form-control">
               </div>
             </div>
         </div>
@@ -371,7 +373,7 @@ $var Navbar: $:NavbarF()
     }
 
     function filter_task_answered(nb_task,task_val){
-        return parseInt(nb_task) <= parseInt(task_val);
+        return parseInt(nb_task) >= parseInt(task_val);
     }
 
     function filter_submissions(table_id, sub_val) {

@@ -197,13 +197,16 @@ def init(plugin_manager, _, _2, config):
         def _per_task_submission_count_and_grade(self, username, tasks):
             task_count_sub = {}
             total = 0
+            nb_task_tried = 0
             for task in tasks:
                 submissions = self.database.submissions.find({"username": str(username), "taskid": task})
                 ut = self.database.user_tasks.find_one({"username": username, "taskid": task})
                 grade = ut["grade"] if ut is not None else 0
                 task_count_sub[task] = {"count": submissions.count(), "grade": grade}
                 total += grade
-            return task_count_sub, total
+                if submissions.count() > 0:
+                    nb_task_tried += 1
+            return task_count_sub, total,nb_task_tried
 
         def POST(self, courseid):
             data = web.input()
@@ -215,11 +218,11 @@ def init(plugin_manager, _, _2, config):
             users_submissions = {}
             for student in list(set(student_ids).intersection(students)):
                 users_submissions[student] = {}
-                users_submissions[student]["tasks"], total = self._per_task_submission_count_and_grade(student,
+                users_submissions[student]["tasks"], total,nb_task_tried = self._per_task_submission_count_and_grade(student,
                                                                                                        task_ids)
                 nb_task = len(users_submissions[student]["tasks"])
                 users_submissions[student]["total"] = int(total / nb_task)
-                users_submissions[student]["nb_task"] = nb_task
+                users_submissions[student]["nb_task"] = nb_task_tried
                 first = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
                     [('submitted_on', -1)]).limit(1))[0]
                 last = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
