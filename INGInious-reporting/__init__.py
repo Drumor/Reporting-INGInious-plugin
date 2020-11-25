@@ -224,9 +224,11 @@ def init(plugin_manager, _, _2, config):
                 users_submissions[student]["total"] = int(total / nb_task)
                 users_submissions[student]["nb_task"] = nb_task_tried
                 first = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
-                    [('submitted_on', -1)]).limit(1))[0]
+                    [('submitted_on', -1)]).limit(1))
+                first = first[0] if len(first) > 0 else None
                 last = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
-                    [('submitted_on', 1)]).limit(1))[0]
+                    [('submitted_on', 1)]).limit(1))
+                last = last[0] if len(last) > 0 else None
                 if first is not None and last is not None:
                     delta = abs((first["submitted_on"] - last["submitted_on"]))
                     users_submissions[student]["course_time"] = {"days": int(delta.days),
