@@ -93,9 +93,10 @@ def init(plugin_manager, _, _2, config):
 
         def show_page(self, course, user_input, msg="", error=False):
             # Load task list
-            #tasks, user_data, aggregations, tutored_aggregations, \
-            #tutored_users, checked_tasks, checked_users, show_aggregations = self.show_page_params(course, user_input)
-            users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, user_input)
+            # tasks, user_data, aggregations, tutored_aggregations, \
+            # tutored_users, checked_tasks, checked_users, show_aggregations = self.show_page_params(course, user_input)
+            users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course,
+                                                                                                      user_input)
 
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/").reporting_index(course,
                                                                                                             tasks,
@@ -198,10 +199,11 @@ def init(plugin_manager, _, _2, config):
             total = 0
             for task in tasks:
                 submissions = self.database.submissions.find({"username": str(username), "taskid": task})
-                grade = self.database.user_tasks.find_one({"username": username,"taskid": task})["grade"]
+                ut = self.database.user_tasks.find_one({"username": username, "taskid": task})
+                grade = ut["grade"] if ut is not None else 0
                 task_count_sub[task] = {"count": submissions.count(), "grade": grade}
                 total += grade
-            return task_count_sub,total
+            return task_count_sub, total
 
         def POST(self, courseid):
             data = web.input()
@@ -213,17 +215,23 @@ def init(plugin_manager, _, _2, config):
             users_submissions = {}
             for student in list(set(student_ids).intersection(students)):
                 users_submissions[student] = {}
-                users_submissions[student]["tasks"], total = self._per_task_submission_count_and_grade(student, task_ids)
+                users_submissions[student]["tasks"], total = self._per_task_submission_count_and_grade(student,
+                                                                                                       task_ids)
                 nb_task = len(users_submissions[student]["tasks"])
-                users_submissions[student]["total"] = int(total/nb_task)
+                users_submissions[student]["total"] = int(total / nb_task)
                 users_submissions[student]["nb_task"] = nb_task
-                first = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort([('submitted_on',-1)]).limit(1))[0]["submitted_on"]
-                last = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort([('submitted_on',1)]).limit(1))[0]["submitted_on"]
-                delta = abs((first-last))
-                users_submissions[student]["course_time"] = {"days": int(delta.days),
-                                                             "hours": int(delta.seconds/3600),
-                                                             "minutes": int((delta.seconds % 3600)/60),
-                                                             "seconds": int((delta.seconds % 3600) % 60)}
+                first = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
+                    [('submitted_on', -1)]).limit(1))[0]
+                last = list(self.database.submissions.find({"courseid": courseid, "username": student}).sort(
+                    [('submitted_on', 1)]).limit(1))[0]
+                if first is not None and last is not None:
+                    delta = abs((first["submitted_on"] - last["submitted_on"]))
+                    users_submissions[student]["course_time"] = {"days": int(delta.days),
+                                                                 "hours": int(delta.seconds / 3600),
+                                                                 "minutes": int((delta.seconds % 3600) / 60),
+                                                                 "seconds": int((delta.seconds % 3600) % 60)}
+                else:
+                    users_submissions[student]["course_time"] = {"days": 0, "hours": 0, "minutes": 0, "seconds": 0}
             return json.dumps(users_submissions)
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
