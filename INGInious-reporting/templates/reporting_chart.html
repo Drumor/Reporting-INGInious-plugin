@@ -397,16 +397,16 @@ $var Navbar: $:NavbarF()
             var nb_task = $$(this).data("nb_task");
             if (duration_val !=="" && task_val!=="" && sub_val!==""){
                 //triple filter
-                show =filter_submissions("sub_table",sub_val) && filter_duration(minutes,duration_val) && filter_task_answered(nb_task,task_val);
+                show =filter_submissions("sub_table",sub_val) || filter_duration(minutes,duration_val) || filter_task_answered(nb_task,task_val);
             }else if (duration_val ==="" && task_val!=="" && sub_val !==""){
                 //filter without duration
-                show =filter_submissions("sub_table",sub_val) && filter_task_answered(nb_task,task_val);
+                show =filter_submissions("sub_table",sub_val) || filter_task_answered(nb_task,task_val);
             }else if (duration_val !=="" && task_val!=="" && sub_val !==""){
                 //filter without task
-                show =filter_submissions("sub_table",sub_val) && filter_duration(minutes,duration_val);
+                show =filter_submissions("sub_table",sub_val) || filter_duration(minutes,duration_val);
             }else if (duration_val !=="" && task_val!=="" && sub_val ===""){
                 //filter without submissions
-                show = filter_duration(minutes,duration_val) && filter_task_answered(nb_task,task_val);
+                show = filter_duration(minutes,duration_val) || filter_task_answered(nb_task,task_val);
             }else if (duration_val ==="" && task_val==="" && sub_val !==""){
                 //filter only submissions
                 show = filter_submissions("sub_table",sub_val);
