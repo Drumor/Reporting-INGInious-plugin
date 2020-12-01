@@ -380,12 +380,16 @@ $var Navbar: $:NavbarF()
         return parseInt(nb_task) >= parseInt(task_val);
     }
 
-    function filter_grade(table_id, grade_val) {
+    function filter_grade(lign_object, grade_val) {
+        let tds = $$( lign_object ).find( 'td.grade_task' );
         if (grade_val ===0){
+            $$(tds).each(function () {
+                $$(this).removeClass("bg-danger");
+            });
             return true;
         }
         let show = true;
-        $$('#'+table_id+' tr.stud td.grade_task').each(function () {
+        $$(tds).each(function () {
             if ($$(this).data('grade') >= grade_val && $$(this).data('grade')>=0) {
                 $$(this).addClass("bg-danger");
             }else{
@@ -396,12 +400,16 @@ $var Navbar: $:NavbarF()
         return show;
     }
 
-    function filter_submissions(table_id, sub_val) {
+    function filter_submissions(lign_object, sub_val) {
+        let tds = $$( lign_object ).find( 'td.sub_count' );
         if (sub_val===9999999999){
+            $$(tds).each(function () {
+                $$(this).removeClass("bg-warning");
+            });
             return true;
         }
-        var count = 0;
-        $$('#'+table_id+' tr.stud td.sub_count').each(function () {
+        let count = 0;
+        $$(tds).each(function () {
             if ($$(this).data('count') <= sub_val && $$(this).data('count')>0) {
                 count++;
                 $$(this).addClass("bg-warning");
@@ -421,6 +429,10 @@ $var Navbar: $:NavbarF()
             //show all
             $$('#sub_table tr.stud').each(function(){
                 $$(this).show();
+                $$(this).find('td').each(function(){
+                    $$(this).removeClass('bg-warning');
+                    $$(this).removeClass('bg-danger');
+                });
             });
         }else{
              // if value is "" change to dummy value to pass filter
@@ -437,18 +449,17 @@ $var Navbar: $:NavbarF()
                 grade_task_val=0;
             }
             $$('#sub_table tr.stud').each(function(){
-            var minutes = $$(this).data("minutes");
-            var nb_task = $$(this).data("nb_task");
-            if (filter_submissions("sub_table",sub_val) &&
-                filter_duration(minutes,duration_val) &&
-                filter_task_answered(nb_task,task_val) &&
-                filter_grade("sub_table",grade_task_val)){
-                $$(this).show();
-            }else{
-                $$(this).hide();
-            }
-
-        });
+                var minutes = $$(this).data("minutes");
+                var nb_task = $$(this).data("nb_task");
+                if (filter_submissions($$(this),sub_val) &&
+                    filter_duration(minutes,duration_val) &&
+                    filter_task_answered(nb_task,task_val) &&
+                    filter_grade($$(this),grade_task_val)){
+                    $$(this).show();
+                }else{
+                    $$(this).hide();
+                }
+            });
         }
     }
 
@@ -461,17 +472,20 @@ $var Navbar: $:NavbarF()
     })
     $$("#diag3").click(function () {
         diagram_request("diag3");
-        $$('#duration_input').on("change",function () {
+        $$('#duration_input').on("keyup",function () {
             filter();
         });
-        $$('#task_answered_input').on("change",function () {
+        $$('#task_answered_input').on("keyup",function () {
             filter();
         });
-        $$('#min_sub_input').on("change",function () {
+        $$('#min_sub_input').on("keyup",function () {
             filter();
         });
-        $$('#grade_per_question_input').on("change",function () {
+        $$('#grade_per_question_input').on("keyup",function () {
             filter();
         });
     })
+
+
+
 </script>
