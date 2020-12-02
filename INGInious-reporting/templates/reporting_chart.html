@@ -53,7 +53,7 @@ $var Navbar: $:NavbarF()
                 <small id="descr_dur">Time lapse between first and last submission</small>
               </div>
               <div class="form-group">
-                <label for="min_sub_input">Submissions filter (less than ...)</label>
+                <label for="min_sub_input">Submissions filter (less or equal...)</label>
                 <input id="min_sub_input" type="number" min="1" placeholder="# submissions" class="form-control" aria-describedby="descr_sub">
                 <small id="descr_sub">Number of submissions per question</small>
               </div>
@@ -64,6 +64,14 @@ $var Navbar: $:NavbarF()
               <div class="form-group">
                 <label for="grade_per_question_input">Grade per question (higher or equal)</label>
                 <input id="grade_per_question_input" type="number" min="0" max="100" placeholder="grade" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="grade_total_input">Total Grade (higher or equal)</label>
+                <input id="grade_total_input" type="number" min="0" max="100" placeholder="grade" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="submitters_only_input">Submitters only</label>
+                <input id="submitters_only_input" type="checkbox">
               </div>
             </div>
         </div>
@@ -369,7 +377,7 @@ $var Navbar: $:NavbarF()
                 }
 
             }
-            $$('#'+student+'').append('<td>'+ json_result[student]["total"] +'%</td>');
+            $$('#'+student+'').append('<td class="total_grade" data-total_grade="'+ json_result[student]["total"]+'" style="border-left: solid grey 1px;">'+ json_result[student]["total"] +'%</td>');
         }
     }
     function filter_duration(minutes,duration_val){
@@ -400,6 +408,13 @@ $var Navbar: $:NavbarF()
         return show;
     }
 
+    function filter_total_grade(stud_grade,grade_val){
+        console.log(stud_grade);
+        console.log(grade_val);
+        return parseInt(stud_grade) >= parseInt(grade_val);
+
+    }
+
     function filter_submissions(lign_object, sub_val) {
         let tds = $$( lign_object ).find( 'td.sub_count' );
         if (sub_val===9999999999){
@@ -421,11 +436,14 @@ $var Navbar: $:NavbarF()
     }
 
     function filter(){
-        var duration_val = $$('#duration_input').val();
-        var task_val = $$('#task_answered_input').val();
-        var sub_val = $$('#min_sub_input').val();
-        var grade_task_val = $$('#grade_per_question_input').val();
-        if (duration_val === "" && task_val === "" && sub_val === "" && grade_task_val === ""){
+        let duration_val = $$('#duration_input').val();
+        let task_val = $$('#task_answered_input').val();
+        let sub_val = $$('#min_sub_input').val();
+        let grade_task_val = $$('#grade_per_question_input').val();
+        let is_checked_submitters_only = $$('#submitters_only_input').prop('checked');
+        let grade_total_val = $$('#grade_total_input').val();
+
+        if (duration_val === "" && task_val === "" && sub_val === "" && grade_task_val === "" && grade_total_val===""){
             //show all
             $$('#sub_table tr.stud').each(function(){
                 $$(this).show();
@@ -448,21 +466,38 @@ $var Navbar: $:NavbarF()
             if(grade_task_val === ""){
                 grade_task_val=0;
             }
+            if(grade_total_val===""){
+                grade_total_val=0;
+            }
             $$('#sub_table tr.stud').each(function(){
-                var minutes = $$(this).data("minutes");
-                var nb_task = $$(this).data("nb_task");
+                let minutes = $$(this).data("minutes");
+                let nb_task = $$(this).data("nb_task");
+                let stud_grade = $$($$(this).find("td.total_grade")[0]).data("total_grade");
                 if (filter_submissions($$(this),sub_val) &&
                     filter_duration(minutes,duration_val) &&
                     filter_task_answered(nb_task,task_val) &&
-                    filter_grade($$(this),grade_task_val)){
+                    filter_grade($$(this),grade_task_val) &&
+                    filter_total_grade(stud_grade,grade_total_val)){
                     $$(this).show();
                 }else{
                     $$(this).hide();
                 }
             });
         }
-    }
+        if (is_checked_submitters_only){
+            $$('#sub_table tr.stud').each(function(){
+                $$(this).hide();
+                let elem = $$(this);
+                let td_count =  $$(this).find('td.sub_count');
+                $$(td_count).each(function () {
+                    if ($$(this).data('count') > 0){
+                        $$(elem).show();
+                    }
+                })
 
+            });
+        }
+    }
     $$( document ).ready(function() {
        diagram_request("diag1");
     });
@@ -472,20 +507,11 @@ $var Navbar: $:NavbarF()
     })
     $$("#diag3").click(function () {
         diagram_request("diag3");
-        $$('#duration_input').on("keyup",function () {
-            filter();
-        });
-        $$('#task_answered_input').on("keyup",function () {
-            filter();
-        });
-        $$('#min_sub_input').on("keyup",function () {
-            filter();
-        });
-        $$('#grade_per_question_input').on("keyup",function () {
-            filter();
-        });
+        $$('#duration_input').on("keyup",function () {filter();});
+        $$('#task_answered_input').on("keyup",function () {filter();});
+        $$('#min_sub_input').on("keyup",function () {filter();});
+        $$('#grade_per_question_input').on("keyup",function () {filter();});
+        $$('#submitters_only_input').on("change",function(){filter();});
+        $$('#grade_total_input').on("change",function(){filter()});
     })
-
-
-
 </script>
