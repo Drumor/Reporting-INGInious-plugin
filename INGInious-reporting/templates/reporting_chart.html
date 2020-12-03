@@ -435,6 +435,20 @@ $var Navbar: $:NavbarF()
         return count > 0;
     }
 
+    function filter_only_submitters(is_checked_submitters_only,lign_object){
+        if (is_checked_submitters_only){
+            let result = false;
+            let td_count =  $$(lign_object).find('td.sub_count');
+            $$(td_count).each(function () {
+                if ($$(this).data('count') > 0){
+                    result = true;
+                }
+            })
+            return result;
+        }
+        return true;
+    }
+
     function filter(){
         let duration_val = $$('#duration_input').val();
         let task_val = $$('#task_answered_input').val();
@@ -443,7 +457,7 @@ $var Navbar: $:NavbarF()
         let is_checked_submitters_only = $$('#submitters_only_input').prop('checked');
         let grade_total_val = $$('#grade_total_input').val();
 
-        if (duration_val === "" && task_val === "" && sub_val === "" && grade_task_val === "" && grade_total_val===""){
+        if (duration_val === "" && task_val === "" && sub_val === "" && grade_task_val === "" && grade_total_val==="" && !is_checked_submitters_only){
             //show all
             $$('#sub_table tr.stud').each(function(){
                 $$(this).show();
@@ -477,24 +491,12 @@ $var Navbar: $:NavbarF()
                     filter_duration(minutes,duration_val) &&
                     filter_task_answered(nb_task,task_val) &&
                     filter_grade($$(this),grade_task_val) &&
-                    filter_total_grade(stud_grade,grade_total_val)){
+                    filter_total_grade(stud_grade,grade_total_val)&&
+                    filter_only_submitters(is_checked_submitters_only,$$(this))){
                     $$(this).show();
                 }else{
                     $$(this).hide();
                 }
-            });
-        }
-        if (is_checked_submitters_only){
-            $$('#sub_table tr.stud').each(function(){
-                $$(this).hide();
-                let elem = $$(this);
-                let td_count =  $$(this).find('td.sub_count');
-                $$(td_count).each(function () {
-                    if ($$(this).data('count') > 0){
-                        $$(elem).show();
-                    }
-                })
-
             });
         }
     }
