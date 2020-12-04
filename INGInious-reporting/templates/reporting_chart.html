@@ -366,9 +366,9 @@ $var Navbar: $:NavbarF()
             $$('#table_body').append('<tr id="'+student+'" class="stud" data-nb_task="'+ json_result[student]["nb_task"] +'" data-minutes="'+mins+'">' +
                 '<td><a href="$get_homepath()/admin/$course.get_id()/student/'+student+'">'+student+'</a></td><td class="course_duration">'
                                 +json_result[student]["course_time"]["days"]+'d '
-                                +json_result[student]["course_time"]["hours"]+':'
-                                +json_result[student]["course_time"]["minutes"]+':'
-                                +json_result[student]["course_time"]["seconds"]+'</td></tr>');
+                                +json_result[student]["course_time"]["hours"].toString().padStart(2, '0')+':'
+                                +json_result[student]["course_time"]["minutes"].toString().padStart(2, '0')+':'
+                                +json_result[student]["course_time"]["seconds"].toString().padStart(2, '0')+'</td></tr>');
             for (var task in json_result[student]["tasks"]){
                 if (json_result[student]["tasks"][task]["count"] === 0 && json_result[student]["tasks"][task]["grade"]===0){
                     $$('#'+student+'').append('<td class="bg-secondary sub_count" style="border-left: solid grey 1px;" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
@@ -411,8 +411,6 @@ $var Navbar: $:NavbarF()
     }
 
     function filter_total_grade(stud_grade,grade_val){
-        console.log(stud_grade);
-        console.log(grade_val);
         return parseInt(stud_grade) >= parseInt(grade_val);
 
     }
