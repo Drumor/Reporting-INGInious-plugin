@@ -50,9 +50,11 @@ class StaticMockPage(object):
     def POST(self, path):
         return self.GET(path)
 
-
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
+    netv4= config.get('networkv4')
+    netv6= config.get('networkv6')
+
 
     def _clean_data(data):
         cleaned = data.replace("&#39;", "")
@@ -105,10 +107,10 @@ def init(plugin_manager, _, _2, config):
                                                                                                             tutored_audiences,
                                                                                                             tutored_users,
                                                                                                             user_input,
-                                                                                                            msg, error)
+                                                                                                      msg, error)
 
     class Diagram1Page(INGIniousSubmissionsAdminPage):
-
+        ### GET/POST ###
         def POST(self, courseID):
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
             dicgrade = {}
@@ -162,6 +164,7 @@ def init(plugin_manager, _, _2, config):
             return json.dumps(table_stud_per_grade)
 
     class Diagram2Page(INGIniousSubmissionsAdminPage):
+        ### GET/POST ###
         def POST(self, courseID):
             course = self.course_factory.get_course(courseID)
             self._logger = logging.getLogger("inginious.webapp.plugins.reporting")
@@ -194,6 +197,7 @@ def init(plugin_manager, _, _2, config):
             return json.dumps(tasks_data)
 
     class Diagram3Page(INGIniousSubmissionsAdminPage):
+        ### HELPERS ###
         def _per_task_submission_count_and_grade(self, username,courseid, tasks):
             task_count_sub = {}
             total = 0
@@ -210,6 +214,7 @@ def init(plugin_manager, _, _2, config):
                     nb_task_tried += 1
             return task_count_sub, total,nb_task_tried
 
+        ### GET/POST ###
         def POST(self, courseid):
             data = web.input()
             task_ids = _clean_data(data["task_ids"])
@@ -241,10 +246,62 @@ def init(plugin_manager, _, _2, config):
                     users_submissions[student]["course_time"] = {"days": 0, "hours": 0, "minutes": 0, "seconds": 0}
             return json.dumps(users_submissions)
 
+    class Diagram4Page(INGIniousSubmissionsAdminPage):
+        ### HELPERS ###
+
+        ### GET/POST ###
+        def POST(self, courseid):
+            per_ip_username = {}
+            per_username_ip_and_q = {}
+            username_ip = {}
+            data = web.input()
+            task_ids = _clean_data(data["task_ids"])
+            student_ids = _clean_data(data["student_ids"])
+            submissions = list(self.database.submissions.find({"taskid": {"$in": task_ids},
+                                                              "username": {"$in": student_ids},
+                                                               "courseid": courseid}))
+            for sub in submissions:
+                cur_username = sub["username"][0]
+                cur_task_id = sub["taskid"]
+                if "user_ip" in sub:
+                    cur_ip = sub["user_ip"]
+                    if cur_ip in per_ip_username and cur_username not in per_ip_username[cur_ip]:
+                        per_ip_username[cur_ip].append(cur_username)
+                    elif cur_ip not in per_ip_username:
+                        per_ip_username[cur_ip] = [cur_username]
+                    else:
+                        pass
+                    if cur_username in per_username_ip_and_q and cur_ip not in per_username_ip_and_q[cur_username]:
+                        per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
+                    elif cur_username not in per_username_ip_and_q:
+                        per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
+                    else:
+                        per_username_ip_and_q[cur_username][cur_ip].append(cur_task_id)
+
+                    #check if an address is in given network
+                    import ipaddress
+                    an_address = ipaddress.ip_address(cur_ip)
+                    try:
+                        a_network = ipaddress.ip_network(netv4)
+                    except ValueError:
+                        a_network = ipaddress.ip_network(netv4, strict=False)
+                    address_in_network_v4 = an_address in a_network
+                    try:
+                        a_network = ipaddress.ip_network(netv6)
+                    except ValueError:
+                        a_network = ipaddress.ip_network(netv6, strict=False)
+                    address_in_network_v6 = an_address in a_network
+                    if cur_username in username_ip:
+                        username_ip[cur_username].append({"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6})
+                    else:
+                        username_ip[cur_username] = [{"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
+            return json.dumps({"section1": per_ip_username, "section2": per_username_ip_and_q, "section3": username_ip})
+
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
     plugin_manager.add_page("/admin/([^/]+)/reporting", ReportingPage)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag1", Diagram1Page)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag2", Diagram2Page)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag3", Diagram3Page)
+    plugin_manager.add_page("/admin/([^/]+)/reporting/diag4", Diagram4Page)
     plugin_manager.add_hook('course_admin_menu', add_admin_menu)

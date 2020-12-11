@@ -34,6 +34,9 @@ $var Navbar: $:NavbarF()
   <li class="nav-item">
     <a class="nav-link" id="diag3"  data-toggle="tab" href="#menu2">Suspicious</a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" id="diag4"  data-toggle="tab" href="#menu3">IP manager</a>
+  </li>
 </ul>
 
 <!-- Tab panes -->
@@ -80,6 +83,95 @@ $var Navbar: $:NavbarF()
       </div>
 
   </div>
+  <div class="tab-pane container-fluid fade" id="menu3">
+      <div id="accordion">
+          <div class="card">
+            <div class="card-header" id="headingOne">
+              <h5 class="mb-0">
+                <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                  Section #1
+                </button>
+              </h5>
+            </div>
+
+            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+              <div class="card-body" id="menu3_section1">
+                  <table class="table">
+                      <thead>
+                      <th>Ip</th>
+                      <th>Usernames</th>
+                      </thead>
+                      <tbody id="section1_table_body">
+                      </tbody>
+                  </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingTwo">
+              <h5 class="mb-0">
+                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  Section #2
+                </button>
+              </h5>
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+              <div class="card-body" id="menu3_section2">
+                  <table class="table">
+                      <thead>
+                      <th>Username</th>
+                      <th>Ip</th>
+                      <th>Questions</th>
+                      </thead>
+                      <tbody id="section2_table_body">
+                      </tbody>
+                  </table>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" id="headingThree">
+              <h5 class="mb-0">
+                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                 Section #3
+                </button>
+              </h5>
+            </div>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+              <div class="card-body" id="menu3_section3">
+                  <form>
+                  <div class="form-check">
+                      <input class="form-check-input" type="radio" name="radio_filter" id="allRadio" value="all" checked>
+                      <label class="form-check-label" for="allRadio">
+                        All
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="radio_filter" id="inRadio" value="in">
+                      <label class="form-check-label" for="inRadio">
+                        Network only
+                      </label>
+                    </div>
+                    <div class="form-check disabled">
+                      <input class="form-check-input" type="radio" name="radio_filter" id="outRadio" value="out">
+                      <label class="form-check-label" for="outRadio">
+                        Outside network
+                      </label>
+                    </div>
+                   </form>
+                  <table class="table">
+                      <thead>
+                      <th>Username</th>
+                      <th>Ips</th>
+                      </thead>
+                      <tbody id="section3_table_body">
+                      </tbody>
+                  </table>
+              </div>
+            </div>
+          </div>
+        </div>
+  </div>
 </div>
 <div style="display: none">
     $for elem in task_titles:
@@ -94,6 +186,7 @@ $var Navbar: $:NavbarF()
      *
      */
     const reducer = (accumulator, currentValue) => accumulator + currentValue;
+
     function mean(table,labels){
         if (table.length === 0){
             return 0
@@ -108,6 +201,7 @@ $var Navbar: $:NavbarF()
             return Math.round((sumnote/nstudents)*2)*0.5;
         }
     }
+
     function standard_deviation(table,labels, mean){
         let result;
         let sub_sum =0;
@@ -154,6 +248,8 @@ $var Navbar: $:NavbarF()
             display_diagram_2(json_result);
           }else if (name === "diag3"){
             display_diagram_3(json_result);
+          }else if (name === "diag4"){
+            display_diagram_4(json_result);
           }else {
             console.log("none");
           }
@@ -382,6 +478,27 @@ $var Navbar: $:NavbarF()
             $$('#'+student+'').append('<td class="total_grade" data-total_grade="'+ json_result[student]["total"]+'" style="border-left: solid grey 1px;">'+ json_result[student]["total"] +'%</td>');
         }
     }
+
+    function display_diagram_4(json_result) {
+
+            for(let elem in json_result["section1"]){
+                $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ json_result["section1"][elem]+'</td></tr>')
+            }
+            for(let elem in json_result["section2"]){
+                for (let ip in json_result["section2"][elem]){
+                    $$('#section2_table_body').append('<tr><td>'+elem+'</td><td>'+ip+'</td><td>'+json_result["section2"][elem][ip]+'</td></tr>');
+                }
+            }
+            for(let username in json_result["section3"]){
+                $$('#section3_table_body').append('<tr><td>'+username+'</td><td class="cur_line"></td></tr>');
+                for (let ip in json_result["section3"][username]){
+                    $$('.cur_line').append('<p class="ips" data-in_v4="'+json_result["section3"][username][ip]['in_v4']+'" data-in_v6="'+json_result["section3"][username][ip]['in_v6']+'" >'+json_result["section3"][username][ip]['ip']+'</p>');
+                }
+                $$('.cur_line').removeClass("cur_line");
+
+            }
+    }
+
     function filter_duration(minutes,duration_val){
         return parseInt(minutes) <= parseInt(duration_val);
     }
@@ -500,6 +617,7 @@ $var Navbar: $:NavbarF()
             });
         }
     }
+
     $$( document ).ready(function() {
        diagram_request("diag1");
     });
@@ -515,5 +633,47 @@ $var Navbar: $:NavbarF()
         $$('#grade_per_question_input').on("keyup",function () {filter();});
         $$('#submitters_only_input').on("change",function(){filter();});
         $$('#grade_total_input').on("change",function(){filter()});
+    })
+
+    function filter_ips(radioValue) {
+        $$('#section3_table_body tr').each(function(){
+            let line = $$(this);
+            let display = false;
+            if(radioValue==="all"){
+                display=true;
+            }else if(radioValue==="in"){
+                $$(this).find("p.ips").each(function(){
+                    let v4 = $$(this).data('in_v4');
+                    let v6 = $$(this).data('in_v6');
+                    if (v4 || v6){
+                        display=true;
+                    }
+                });
+            }else{
+                $$(this).find("p.ips").each(function(){
+                    let v4 = $$(this).data('in_v4');
+                    let v6 = $$(this).data('in_v6');
+                    if (!v4 || !v6){
+                        display=true;
+                    }
+                });
+            }
+            if(display){
+                line.show();
+            }else{
+                line.hide();
+            }
+
+        });
+    }
+
+    $$("#diag4").click(function () {
+        diagram_request("diag4");
+        $$("input[name='radio_filter']").change(function () {
+            var radioValue = $$("input[name='radio_filter']:checked").val();
+            if(radioValue){
+                filter_ips(radioValue);
+            }
+        });
     })
 </script>
