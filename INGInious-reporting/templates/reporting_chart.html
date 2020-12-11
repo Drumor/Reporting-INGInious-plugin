@@ -1,4 +1,4 @@
-$def with(course,stud_ids,task_ids,task_titles)
+$def with(course,stud_ids,task_ids,task_titles,netname)
 $var title: Reporting
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
@@ -89,7 +89,7 @@ $var Navbar: $:NavbarF()
             <div class="card-header" id="headingOne">
               <h5 class="mb-0">
                 <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                  Section #1
+                  Students with same IPs (or subnet for IPv6)
                 </button>
               </h5>
             </div>
@@ -111,7 +111,7 @@ $var Navbar: $:NavbarF()
             <div class="card-header" id="headingTwo">
               <h5 class="mb-0">
                 <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                  Section #2
+                  IP changed during session
                 </button>
               </h5>
             </div>
@@ -133,7 +133,7 @@ $var Navbar: $:NavbarF()
             <div class="card-header" id="headingThree">
               <h5 class="mb-0">
                 <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                 Section #3
+                 inside/outside $netname
                 </button>
               </h5>
             </div>
@@ -149,13 +149,13 @@ $var Navbar: $:NavbarF()
                     <div class="form-check">
                       <input class="form-check-input" type="radio" name="radio_filter" id="inRadio" value="in">
                       <label class="form-check-label" for="inRadio">
-                        Network only
+                        $netname only
                       </label>
                     </div>
                     <div class="form-check disabled">
                       <input class="form-check-input" type="radio" name="radio_filter" id="outRadio" value="out">
                       <label class="form-check-label" for="outRadio">
-                        Outside network
+                        Outside $netname
                       </label>
                     </div>
                    </form>

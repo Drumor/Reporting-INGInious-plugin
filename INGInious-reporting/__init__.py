@@ -54,6 +54,7 @@ def init(plugin_manager, _, _2, config):
     """ Init the plugin """
     netv4= config.get('networkv4')
     netv6= config.get('networkv6')
+    netname = config.get('networkname')
 
 
     def _clean_data(data):
@@ -91,7 +92,7 @@ def init(plugin_manager, _, _2, config):
             for task_id in tasks:
                 task_titles[task_id] = tasks[task_id].get_name(self.user_manager.session_language())
             return self.template_helper.get_custom_renderer(PATH_TO_PLUGIN + "/templates/") \
-                .reporting_chart(course, student_ids, task_ids, task_titles)
+                .reporting_chart(course, student_ids, task_ids, task_titles, netname)
 
         def show_page(self, course, user_input, msg="", error=False):
             # Load task list
@@ -260,6 +261,7 @@ def init(plugin_manager, _, _2, config):
             submissions = list(self.database.submissions.find({"taskid": {"$in": task_ids},
                                                               "username": {"$in": student_ids},
                                                                "courseid": courseid}))
+            sort_per_username_ip_and_q = {}
             for sub in submissions:
                 cur_username = sub["username"][0]
                 cur_task_id = sub["taskid"]
@@ -271,14 +273,16 @@ def init(plugin_manager, _, _2, config):
                         per_ip_username[cur_ip] = [cur_username]
                     else:
                         pass
+
                     if cur_username in per_username_ip_and_q and cur_ip not in per_username_ip_and_q[cur_username]:
                         per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
                     elif cur_username not in per_username_ip_and_q:
                         per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
                     else:
                         per_username_ip_and_q[cur_username][cur_ip].append(cur_task_id)
-
-                    #check if an address is in given network
+                    if(len(per_username_ip_and_q[cur_username]))> 1:
+                        sort_per_username_ip_and_q[cur_username] = per_username_ip_and_q[cur_username]
+                    #check if an address is in given networke
                     import ipaddress
                     an_address = ipaddress.ip_address(cur_ip)
                     try:
@@ -295,7 +299,7 @@ def init(plugin_manager, _, _2, config):
                         username_ip[cur_username].append({"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6})
                     else:
                         username_ip[cur_username] = [{"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
-            return json.dumps({"section1": per_ip_username, "section2": per_username_ip_and_q, "section3": username_ip})
+            return json.dumps({"section1": per_ip_username, "section2": sort_per_username_ip_and_q, "section3": username_ip})
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
