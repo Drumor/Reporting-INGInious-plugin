@@ -50,12 +50,12 @@ class StaticMockPage(object):
     def POST(self, path):
         return self.GET(path)
 
+
 def init(plugin_manager, _, _2, config):
     """ Init the plugin """
-    netv4= config.get('networkv4')
-    netv6= config.get('networkv6')
+    netv4 = config.get('networkv4')
+    netv6 = config.get('networkv6')
     netname = config.get('networkname')
-
 
     def _clean_data(data):
         cleaned = data.replace("&#39;", "")
@@ -108,7 +108,7 @@ def init(plugin_manager, _, _2, config):
                                                                                                             tutored_audiences,
                                                                                                             tutored_users,
                                                                                                             user_input,
-                                                                                                      msg, error)
+                                                                                                            msg, error)
 
     class Diagram1Page(INGIniousSubmissionsAdminPage):
         ### GET/POST ###
@@ -199,7 +199,7 @@ def init(plugin_manager, _, _2, config):
 
     class Diagram3Page(INGIniousSubmissionsAdminPage):
         ### HELPERS ###
-        def _per_task_submission_count_and_grade(self, username,courseid, tasks):
+        def _per_task_submission_count_and_grade(self, username, courseid, tasks):
             task_count_sub = {}
             total = 0
             nb_task_tried = 0
@@ -213,7 +213,7 @@ def init(plugin_manager, _, _2, config):
                 total += grade
                 if submissions.count() > 0:
                     nb_task_tried += 1
-            return task_count_sub, total,nb_task_tried
+            return task_count_sub, total, nb_task_tried
 
         ### GET/POST ###
         def POST(self, courseid):
@@ -226,8 +226,9 @@ def init(plugin_manager, _, _2, config):
             users_submissions = {}
             for student in list(set(student_ids).intersection(students)):
                 users_submissions[student] = {}
-                users_submissions[student]["tasks"], total,nb_task_tried = self._per_task_submission_count_and_grade(student,
-                                                                                                       courseid,task_ids)
+                users_submissions[student]["tasks"], total, nb_task_tried = self._per_task_submission_count_and_grade(
+                    student,
+                    courseid, task_ids)
                 nb_task = len(users_submissions[student]["tasks"])
                 users_submissions[student]["total"] = int(total / nb_task)
                 users_submissions[student]["nb_task"] = nb_task_tried
@@ -259,13 +260,14 @@ def init(plugin_manager, _, _2, config):
             task_ids = _clean_data(data["task_ids"])
             student_ids = _clean_data(data["student_ids"])
             submissions = list(self.database.submissions.find({"taskid": {"$in": task_ids},
-                                                              "username": {"$in": student_ids},
+                                                               "username": {"$in": student_ids},
                                                                "courseid": courseid}))
             sort_per_username_ip_and_q = {}
             for sub in submissions:
                 cur_username = sub["username"][0]
                 cur_task_id = sub["taskid"]
                 if "user_ip" in sub:
+                    # SECTION 1
                     cur_ip = sub["user_ip"]
                     if cur_ip in per_ip_username and cur_username not in per_ip_username[cur_ip]:
                         per_ip_username[cur_ip].append(cur_username)
@@ -273,16 +275,19 @@ def init(plugin_manager, _, _2, config):
                         per_ip_username[cur_ip] = [cur_username]
                     else:
                         pass
-
+                    # SECTION 2
                     if cur_username in per_username_ip_and_q and cur_ip not in per_username_ip_and_q[cur_username]:
                         per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
                     elif cur_username not in per_username_ip_and_q:
                         per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
-                    else:
+                    elif cur_task_id not in per_username_ip_and_q[cur_username][cur_ip]:
                         per_username_ip_and_q[cur_username][cur_ip].append(cur_task_id)
-                    if(len(per_username_ip_and_q[cur_username]))> 1:
-                        sort_per_username_ip_and_q[cur_username] = per_username_ip_and_q[cur_username]
-                    #check if an address is in given networke
+                    else:
+                        pass
+                    if (len(per_username_ip_and_q[cur_username])) > 1:
+                        sort_per_username_ip_and_q[cur_username] = per_username_ip_and_q[cur_username].copy()
+                    # SECTION 3
+                    # check if an address is in given networke
                     import ipaddress
                     an_address = ipaddress.ip_address(cur_ip)
                     try:
@@ -295,11 +300,19 @@ def init(plugin_manager, _, _2, config):
                     except ValueError:
                         a_network = ipaddress.ip_network(netv6, strict=False)
                     address_in_network_v6 = an_address in a_network
-                    if cur_username in username_ip:
-                        username_ip[cur_username].append({"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6})
+                    if cur_username in username_ip and cur_ip not in [sub['ip'] for sub in username_ip[cur_username]]:
+                        username_ip[cur_username].append(
+                            {"ip": cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6})
                     else:
-                        username_ip[cur_username] = [{"ip":cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
-            return json.dumps({"section1": per_ip_username, "section2": sort_per_username_ip_and_q, "section3": username_ip})
+                        username_ip[cur_username] = [
+                            {"ip": cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
+
+            final_per_ip_username = {}
+            for elem in per_ip_username:
+                if len(per_ip_username[elem]) > 1:
+                    final_per_ip_username[elem] = per_ip_username[elem].copy()
+            return json.dumps(
+                {"section1": final_per_ip_username, "section2": sort_per_username_ip_and_q, "section3": username_ip})
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")

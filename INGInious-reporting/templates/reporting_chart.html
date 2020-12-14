@@ -480,7 +480,7 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_4(json_result) {
-            console.log(json_result);
+
             for(let elem in json_result["section1"]){
                 $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ json_result["section1"][elem]+'</td></tr>')
             }
