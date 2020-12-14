@@ -280,7 +280,9 @@ def init(plugin_manager, _, _2, config):
                         per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
                     elif cur_username in per_username_ip_and_q and cur_ip not in per_username_ip_and_q[cur_username]:
                         per_username_ip_and_q[cur_username][cur_ip] = [cur_task_id]
-                    else:
+                    elif cur_username in per_username_ip_and_q and \
+                            cur_ip in per_username_ip_and_q[cur_username] and \
+                            cur_task_id not in per_username_ip_and_q[cur_username][cur_ip]:
                         per_username_ip_and_q[cur_username][cur_ip].append(cur_task_id)
                     if (len(per_username_ip_and_q[cur_username])) > 1:
                         sort_per_username_ip_and_q[cur_username] = per_username_ip_and_q[cur_username].copy()
