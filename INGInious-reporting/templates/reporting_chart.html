@@ -653,7 +653,7 @@ $var Navbar: $:NavbarF()
                 $$(this).find("p.ips").each(function(){
                     let v4 = $$(this).data('in_v4');
                     let v6 = $$(this).data('in_v6');
-                    if (!v4 || !v6){
+                    if (!v4 && !v6){
                         display=true;
                     }
                 });
