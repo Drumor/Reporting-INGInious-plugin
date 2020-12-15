@@ -300,12 +300,14 @@ def init(plugin_manager, _, _2, config):
                     except ValueError:
                         a_network = ipaddress.ip_network(netv6, strict=False)
                     address_in_network_v6 = an_address in a_network
-                    if cur_username in username_ip and cur_ip not in [sub['ip'] for sub in username_ip[cur_username]]:
+                    if cur_username not in username_ip:
+                        username_ip[cur_username] = [
+                            {"ip": cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
+                    elif cur_username in username_ip and cur_ip not in [sub['ip'] for sub in username_ip[cur_username]]:
                         username_ip[cur_username].append(
                             {"ip": cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6})
                     else:
-                        username_ip[cur_username] = [
-                            {"ip": cur_ip, "in_v4": address_in_network_v4, "in_v6": address_in_network_v6}]
+                       pass
 
             final_per_ip_username = {}
             for elem in per_ip_username:
