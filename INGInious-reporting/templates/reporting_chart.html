@@ -120,7 +120,7 @@ $var Navbar: $:NavbarF()
                   <table class="table">
                       <thead>
                       <th>Username</th>
-                      <th>Ip (Questions)</th>
+                      <th>IP (Questions)</th>
                       </thead>
                       <tbody id="section2_table_body">
                       </tbody>
@@ -479,7 +479,6 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_4(json_result) {
-            console.log(json_result);
 
             for(let elem in json_result["section1"]){
                 $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ json_result["section1"][elem]+'</td></tr>')
@@ -642,21 +641,28 @@ $var Navbar: $:NavbarF()
             let line = $$(this);
             let display = false;
             if(radioValue==="all"){
+                $$(this).find("p.ips").each(function(){
+                    $$(this).removeClass('highlight');
+                });
                 display=true;
             }else if(radioValue==="in"){
                 $$(this).find("p.ips").each(function(){
+                    $$(this).removeClass('highlight');
                     let v4 = $$(this).data('in_v4');
                     let v6 = $$(this).data('in_v6');
                     if (v4 || v6){
                         display=true;
+                        $$(this).addClass('highlight');
                     }
                 });
             }else{
                 $$(this).find("p.ips").each(function(){
+                    $$(this).removeClass('highlight');
                     let v4 = $$(this).data('in_v4');
                     let v6 = $$(this).data('in_v6');
                     if (!v4 && !v6){
                         display=true;
+                        $$(this).addClass('highlight');
                     }
                 });
             }
