@@ -488,6 +488,7 @@ $var Navbar: $:NavbarF()
                 for (let ip in json_result["section2"][elem]){
                     $$('.cur_line').append('<p>'+ip+' ('+json_result["section2"][elem][ip]+')</p>');
                 }
+                $$('.cur_line').removeClass("cur_line");
             }
             for(let username in json_result["section3"]){
                 $$('#section3_table_body').append('<tr><td>'+username+'</td><td class="cur_line"></td></tr>');
