@@ -120,8 +120,7 @@ $var Navbar: $:NavbarF()
                   <table class="table">
                       <thead>
                       <th>Username</th>
-                      <th>Ip</th>
-                      <th>Questions</th>
+                      <th>Ip (Questions)</th>
                       </thead>
                       <tbody id="section2_table_body">
                       </tbody>
@@ -485,8 +484,9 @@ $var Navbar: $:NavbarF()
                 $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ json_result["section1"][elem]+'</td></tr>')
             }
             for(let elem in json_result["section2"]){
+                $$('#section2_table_body').append('<tr><td>'+elem+'</td><td class="cur_line"></td></tr>');
                 for (let ip in json_result["section2"][elem]){
-                    $$('#section2_table_body').append('<tr><td>'+elem+'</td><td>'+ip+'</td><td>'+json_result["section2"][elem][ip]+'</td></tr>');
+                    $$('.cur_line').append('<p>'+ip+' ('+json_result["section2"][elem][ip]+')</p>');
                 }
             }
             for(let username in json_result["section3"]){
