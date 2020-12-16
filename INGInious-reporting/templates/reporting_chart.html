@@ -3,6 +3,9 @@ $var title: Reporting
 $var header:
     <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
     <script src="$get_homepath(True)/plugins/reporting/static/chartjs-plugin-annotation.min.js"></script>
+    <style>
+    .highlight {background-color: yellowgreen;}
+    </style>
 $var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
 
 $#
@@ -479,14 +482,20 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_4(json_result) {
-
+            $$('#section1_table_body').empty();
+            $$('#section2_table_body').empty();
+            $$('#section3_table_body').empty();
             for(let elem in json_result["section1"]){
-                $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ json_result["section1"][elem]+'</td></tr>')
+                let list_users = json_result["section1"][elem];
+                list_users = list_users.toString().replace(',',', ');
+                $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ list_users +'</td></tr>')
             }
             for(let elem in json_result["section2"]){
                 $$('#section2_table_body').append('<tr><td>'+elem+'</td><td class="cur_line"></td></tr>');
                 for (let ip in json_result["section2"][elem]){
-                    $$('.cur_line').append('<p>'+ip+' ('+json_result["section2"][elem][ip]+')</p>');
+                    let list_qs = json_result["section2"][elem][ip];
+                    list_qs = list_qs.toString().replace(',',', ');
+                    $$('.cur_line').append('<p>'+ip+' ('+list_qs+')</p>');
                 }
                 $$('.cur_line').removeClass("cur_line");
             }
