@@ -271,6 +271,11 @@ def init(plugin_manager, _, _2, config):
                     # SECTION 1
                     cur_ip = sub["user_ip"]
 
+                    import random
+                    n = random.randint(1, 2)
+                    if n % 2 == 0:
+                        cur_ip = "130.104.25.12"
+
                     if cur_ip in per_ip_username and cur_username not in per_ip_username[cur_ip]:
                         per_ip_username[cur_ip].append(cur_username)
                     elif cur_ip not in per_ip_username:
@@ -321,6 +326,7 @@ def init(plugin_manager, _, _2, config):
                 {"section1": final_per_ip_username, "section2": sort_per_username_ip_and_q, "section3": username_ip})
 
     plugin_manager.add_page('/plugins/reporting/static/(.+)', StaticMockPage)
+    plugin_manager.add_hook("javascript_header", lambda: "/static/js/libs/chart.min.js")
     plugin_manager.add_hook("javascript_header", lambda: "/plugins/reporting/static/chartjs-plugin-annotation.min.js")
     plugin_manager.add_page("/admin/([^/]+)/reporting", ReportingPage)
     plugin_manager.add_page("/admin/([^/]+)/reporting/diag1", Diagram1Page)
