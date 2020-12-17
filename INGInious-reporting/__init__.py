@@ -264,11 +264,13 @@ def init(plugin_manager, _, _2, config):
                                                                "courseid": courseid}))
             sort_per_username_ip_and_q = {}
             for sub in submissions:
+                cur_date = sub["submitted_on"].strftime("%m/%d/%Y %H:%M:%S")
                 cur_username = sub["username"][0]
                 cur_task_id = sub["taskid"]
                 if "user_ip" in sub:
                     # SECTION 1
                     cur_ip = sub["user_ip"]
+
                     if cur_ip in per_ip_username and cur_username not in per_ip_username[cur_ip]:
                         per_ip_username[cur_ip].append(cur_username)
                     elif cur_ip not in per_ip_username:
@@ -277,17 +279,19 @@ def init(plugin_manager, _, _2, config):
                         pass
                     # SECTION 2
                     if cur_username not in per_username_ip_and_q:
-                        per_username_ip_and_q[cur_username] = {cur_ip: [cur_task_id]}
+                        per_username_ip_and_q[cur_username] = {cur_ip: {cur_task_id: [cur_date]}}
                     elif cur_username in per_username_ip_and_q and cur_ip not in per_username_ip_and_q[cur_username]:
-                        per_username_ip_and_q[cur_username][cur_ip] = [cur_task_id]
+                        per_username_ip_and_q[cur_username][cur_ip] = {cur_task_id: [cur_date]}
                     elif cur_username in per_username_ip_and_q and \
                             cur_ip in per_username_ip_and_q[cur_username] and \
-                            cur_task_id not in per_username_ip_and_q[cur_username][cur_ip]:
-                        per_username_ip_and_q[cur_username][cur_ip].append(cur_task_id)
+                            cur_task_id not in [x for x in per_username_ip_and_q[cur_username][cur_ip]]:
+                        per_username_ip_and_q[cur_username][cur_ip][cur_task_id] = [cur_date]
+                    else:
+                        per_username_ip_and_q[cur_username][cur_ip][cur_task_id].append(cur_date)
                     if (len(per_username_ip_and_q[cur_username])) > 1:
                         sort_per_username_ip_and_q[cur_username] = per_username_ip_and_q[cur_username].copy()
                     # SECTION 3
-                    # check if an address is in given networke
+                    # check if an address is in given network
                     import ipaddress
                     an_address = ipaddress.ip_address(cur_ip)
                     try:

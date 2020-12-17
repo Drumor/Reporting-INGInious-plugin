@@ -494,8 +494,12 @@ $var Navbar: $:NavbarF()
                 $$('#section2_table_body').append('<tr><td>'+elem+'</td><td class="cur_line"></td></tr>');
                 for (let ip in json_result["section2"][elem]){
                     let list_qs = json_result["section2"][elem][ip];
+                    let listqstr ="";
+                    for (let question in list_qs){
+                         listqstr += "<button type='button' class='btn btn-link' data-toggle='tooltip' data-placement='top' title='"+json_result["section2"][elem][ip][question]+"'>"+ question +"</button>"
+                    }
                     list_qs = list_qs.toString().replace(',',', ');
-                    $$('.cur_line').append('<p>'+ip+' ('+list_qs+')</p>');
+                    $$('.cur_line').append('<p>'+ip+' '+listqstr+'</p>');
                 }
                 $$('.cur_line').removeClass("cur_line");
             }
@@ -507,6 +511,7 @@ $var Navbar: $:NavbarF()
                 $$('.cur_line').removeClass("cur_line");
 
             }
+            $$('[data-toggle="tooltip"]').tooltip();
     }
 
     function filter_duration(minutes,duration_val){
