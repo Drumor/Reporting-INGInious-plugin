@@ -264,17 +264,12 @@ def init(plugin_manager, _, _2, config):
                                                                "courseid": courseid}))
             sort_per_username_ip_and_q = {}
             for sub in submissions:
-                cur_date = sub["submitted_on"].strftime("%m/%d/%Y %H:%M:%S")
+                cur_date = sub["submitted_on"].strftime("%d/%m/%Y %H:%M:%S")
                 cur_username = sub["username"][0]
                 cur_task_id = sub["taskid"]
                 if "user_ip" in sub:
                     # SECTION 1
                     cur_ip = sub["user_ip"]
-
-                    import random
-                    n = random.randint(1, 2)
-                    if n % 2 == 0:
-                        cur_ip = "130.104.25.12"
 
                     if cur_ip in per_ip_username and cur_username not in per_ip_username[cur_ip]:
                         per_ip_username[cur_ip].append(cur_username)
