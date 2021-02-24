@@ -1,30 +1,36 @@
-$def with(course,stud_ids,task_ids,task_titles,netname)
-$var title: Reporting
-$var header:
-    <script src="$get_homepath(True)/static/js/libs/chart.min.js"></script>
-    <script src="$get_homepath(True)/plugins/reporting/static/chartjs-plugin-annotation.min.js"></script>
+{# This file is part of INGInious. See the LICENSE and the COPYRIGHTS files for #}
+{# more information about the licensing of this file. #}
+
+{% extends "layout.html" %}
+
+{% block title %} Reporting {% endblock %}
+
+{% block header %}
+    {{ super() }}
+    <script src="{{get_homepath()}}/static/js/libs/chart.min.js"></script>
+    <script src="{{get_homepath()}}/plugins/reporting/static/chartjs-plugin-annotation.min.js"></script>
     <style>
     .highlight {background-color: yellowgreen;}
     </style>
-$var Column: $:template_helper.call('course_admin_menu',course=course,current='reporting')
+{% endblock %}
 
-$#
-$# This file is part of Reporting plugin. See the LICENSE and the COPYRIGHTS files for
-$# more information about the licensing of this file.
-$#
+{% block column %}
+    {{ template_helper.call('course_admin_menu',course=course,current='reporting') | safe }}
+{% endblock %}
 
-$def NavbarF():
+{% block navbar %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="$get_homepath()/course/$course.get_id()">$course.get_name(user_manager.session_language())</a></li>
-            <li class="breadcrumb-item"><a href="$get_homepath()/admin/$course.get_id()" title="Administration" data-toggle="tooltip" data-placement="bottom">
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/course/{{course.get_id()}}">{{course.get_name(user_manager.session_language())}}</a></li>
+            <li class="breadcrumb-item"><a href="{{get_homepath()}}/admin/{{course.get_id()}}" title="Administration" data-toggle="tooltip" data-placement="bottom">
                 <i class="fa fa-user-secret"></i></a></li>
             <li class="breadcrumb-item active"><a href="#"><i class="fa fa-bar-chart"></i> Reporting <span class="sr-only">(current)</span></a></li>
         </ol>
     </nav>
-$var Navbar: $:NavbarF()
+{% endblock %}
 
-<h1>Reporting - Results</h1>
+{% block content %}
+<h2>Reporting - Results</h2>
 
 <!-- Nav tabs -->
 <ul class="nav nav-tabs">
@@ -65,7 +71,7 @@ $var Navbar: $:NavbarF()
               </div>
               <div class="form-group">
                 <label for="task_answered_input">Number of tasks answered (at least ...)</label>
-                <input id="task_answered_input" type="number" min="1" max="$len(task_ids.split(','))" placeholder="# tasks" class="form-control">
+                <input id="task_answered_input" type="number" min="1" max="{{ task_ids.split(',') | length }}" placeholder="# tasks" class="form-control">
               </div>
               <div class="form-group">
                 <label for="grade_per_question_input">Grade per question (higher or equal)</label>
@@ -135,7 +141,7 @@ $var Navbar: $:NavbarF()
             <div class="card-header" id="headingThree">
               <h5 class="mb-0">
                 <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                 inside/outside $netname
+                 inside/outside {{netname}}
                 </button>
               </h5>
             </div>
@@ -151,13 +157,13 @@ $var Navbar: $:NavbarF()
                     <div class="form-check">
                       <input class="form-check-input" type="radio" name="radio_filter" id="inRadio" value="in">
                       <label class="form-check-label" for="inRadio">
-                        $netname only
+                          {{netname}} only
                       </label>
                     </div>
                     <div class="form-check disabled">
                       <input class="form-check-input" type="radio" name="radio_filter" id="outRadio" value="out">
                       <label class="form-check-label" for="outRadio">
-                        Outside $netname
+                        Outside {{netname}}
                       </label>
                     </div>
                    </form>
@@ -176,8 +182,9 @@ $var Navbar: $:NavbarF()
   </div>
 </div>
 <div style="display: none">
-    $for elem in task_titles:
-        <p id="$elem">$task_titles[elem]</p>
+    {% for elem in task_titles %}
+        <p id="{{elem}}">{{task_titles[elem]}}</p>
+    {% endfor %}
 </div>
 
 
@@ -230,19 +237,19 @@ $var Navbar: $:NavbarF()
 
     function diagram_request(name) {
       const url = window.location.href +"/"+ name;
-      $$.ajax({
+      $.ajax({
         url: url,
         data: {
-          "student_ids": "$str(stud_ids)",
-          "task_ids": "$str(task_ids)"
+          "student_ids": "{{ stud_ids | string }}",
+          "task_ids": "{{ task_ids | string }}"
         },
         type: "POST",
         success: function (result) {
           let json_result = JSON.parse(result);
           if (name ==="diag1"){
             for (const [title,subdict] of Object.entries(json_result)){
-              $$("#home").append("<canvas id='canvas_"+title+"'></canvas>");
-              title_text = $$("#"+title).text();
+              $("#home").append("<canvas id='canvas_"+title+"'></canvas>");
+              title_text = $("#"+title).text();
               display_diagram_1(subdict,title,title_text);
             }
 
@@ -357,17 +364,20 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_2(table_per_task){
+        console.log(table_per_task);
       let nstuds =table_per_task["nstuds"];
-      let task_ids ="$task_ids".split(",");
+      let task_ids ="{{ task_ids }}".split(",");
       let viewed =[];
       let attempted = [];
       let succeeded = [];
       let title_text = [];
       for (task_id of task_ids){
-          title_text.push($$("#"+task_id).text());
-          viewed.push(table_per_task[task_id][0]["viewed"]);
-          attempted.push(table_per_task[task_id][0]["attempted"]);
-          succeeded.push(table_per_task[task_id][0]["succeeded"]);
+          title_text.push($("#"+task_id).text());
+          if(table_per_task[task_id].length) {
+              viewed.push(table_per_task[task_id][0]["viewed"]);
+              attempted.push(table_per_task[task_id][0]["attempted"]);
+              succeeded.push(table_per_task[task_id][0]["succeeded"]);
+          }
       }
 
       var line = [
@@ -444,54 +454,54 @@ $var Navbar: $:NavbarF()
     }
 
     function display_diagram_3(json_result){
-        $$('#sub_table').html('<thead id="table_header" class="table-borderless"><tr id="table_id_labels"><th></th><th></th></tr></thead>');
-        $$('#table_header').append('<tr id="table_labels"><th>Student</th><th>Course Duration</th></tr>');
+        $('#sub_table').html('<thead id="table_header" class="table-borderless"><tr id="table_id_labels"><th></th><th></th></tr></thead>');
+        $('#table_header').append('<tr id="table_labels"><th>Student</th><th>Course Duration</th></tr>');
         for (var student in json_result){
             cols = Object.keys(json_result[student]).length;
             for (var task in json_result[student]["tasks"]){
-                $$('#table_id_labels').append('<th colspan="2">'+task+'</th>');
-                $$('#table_labels').append('<th># submissions</th><th>grade</th>');
+                $('#table_id_labels').append('<th colspan="2">'+task+'</th>');
+                $('#table_labels').append('<th># submissions</th><th>grade</th>');
             }
             break;
         }
-        $$('#table_id_labels').append('<th></th>');
-        $$('#table_labels').append('<th>Total</th>');
+        $('#table_id_labels').append('<th></th>');
+        $('#table_labels').append('<th>Total</th>');
 
         //
-        $$('#sub_table').append('<tbody id="table_body"></tbody>');
+        $('#sub_table').append('<tbody id="table_body"></tbody>');
         for (var student in json_result){
             var mins = ((json_result[student]["course_time"]["days"]*60+json_result[student]["course_time"]["hours"])*60+json_result[student]["course_time"]["minutes"]);
-            $$('#table_body').append('<tr id="'+student+'" class="stud" data-nb_task="'+ json_result[student]["nb_task"] +'" data-minutes="'+mins+'">' +
-                '<td><a href="$get_homepath()/admin/$course.get_id()/student/'+student+'">'+student+'</a></td><td class="course_duration">'
+            $('#table_body').append('<tr id="'+student+'" class="stud" data-nb_task="'+ json_result[student]["nb_task"] +'" data-minutes="'+mins+'">' +
+                '<td><a href="{{get_homepath()}}/admin/{{course.get_id()}}/student/'+student+'">'+student+'</a></td><td class="course_duration">'
                                 +json_result[student]["course_time"]["days"]+'d '
                                 +json_result[student]["course_time"]["hours"].toString().padStart(2, '0')+':'
                                 +json_result[student]["course_time"]["minutes"].toString().padStart(2, '0')+':'
                                 +json_result[student]["course_time"]["seconds"].toString().padStart(2, '0')+'</td></tr>');
             for (var task in json_result[student]["tasks"]){
                 if (json_result[student]["tasks"][task]["count"] === 0 && json_result[student]["tasks"][task]["grade"]===0){
-                    $$('#'+student+'').append('<td class="bg-secondary sub_count" style="border-left: solid grey 1px;" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
-                    $$('#'+student+'').append('<td class="bg-secondary grade_task" data-grade="'+json_result[student]["tasks"][task]["grade"]+'">'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
+                    $('#'+student+'').append('<td class="bg-secondary sub_count" style="border-left: solid grey 1px;" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
+                    $('#'+student+'').append('<td class="bg-secondary grade_task" data-grade="'+json_result[student]["tasks"][task]["grade"]+'">'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
                 }else{
-                    $$('#'+student+'').append('<td class="sub_count" style="border-left: solid grey 1px;" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
-                    $$('#'+student+'').append('<td class="grade_task" data-grade="'+json_result[student]["tasks"][task]["grade"]+'">'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
+                    $('#'+student+'').append('<td class="sub_count" style="border-left: solid grey 1px;" data-count="'+ json_result[student]["tasks"][task]["count"] +'">'+ json_result[student]["tasks"][task]["count"] +'</td>');
+                    $('#'+student+'').append('<td class="grade_task" data-grade="'+json_result[student]["tasks"][task]["grade"]+'">'+ json_result[student]["tasks"][task]["grade"] +'%</td>');
                 }
 
             }
-            $$('#'+student+'').append('<td class="total_grade" data-total_grade="'+ json_result[student]["total"]+'" style="border-left: solid grey 1px;">'+ json_result[student]["total"] +'%</td>');
+            $('#'+student+'').append('<td class="total_grade" data-total_grade="'+ json_result[student]["total"]+'" style="border-left: solid grey 1px;">'+ json_result[student]["total"] +'%</td>');
         }
     }
 
     function display_diagram_4(json_result) {
-            $$('#section1_table_body').empty();
-            $$('#section2_table_body').empty();
-            $$('#section3_table_body').empty();
+            $('#section1_table_body').empty();
+            $('#section2_table_body').empty();
+            $('#section3_table_body').empty();
             for(let elem in json_result["section1"]){
                 let list_users = json_result["section1"][elem];
                 list_users = list_users.toString().replace(',',', ');
-                $$('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ list_users +'</td></tr>')
+                $('#section1_table_body').append('<tr><td>'+elem+'</td><td>'+ list_users +'</td></tr>')
             }
             for(let elem in json_result["section2"]){
-                $$('#section2_table_body').append('<tr><td>'+elem+'</td><td class="cur_line"></td></tr>');
+                $('#section2_table_body').append('<tr><td>'+elem+'</td><td class="cur_line"></td></tr>');
                 for (let ip in json_result["section2"][elem]){
                     let list_qs = json_result["section2"][elem][ip];
                     let listqstr ="";
@@ -499,19 +509,19 @@ $var Navbar: $:NavbarF()
                          listqstr += "<button type='button' class='btn btn-link' data-toggle='tooltip' data-placement='top' title='"+json_result["section2"][elem][ip][question]+"'>"+ question +"</button>"
                     }
                     list_qs = list_qs.toString().replace(',',', ');
-                    $$('.cur_line').append('<p>'+ip+' '+listqstr+'</p>');
+                    $('.cur_line').append('<p>'+ip+' '+listqstr+'</p>');
                 }
-                $$('.cur_line').removeClass("cur_line");
+                $('.cur_line').removeClass("cur_line");
             }
             for(let username in json_result["section3"]){
-                $$('#section3_table_body').append('<tr><td>'+username+'</td><td class="cur_line"></td></tr>');
+                $('#section3_table_body').append('<tr><td>'+username+'</td><td class="cur_line"></td></tr>');
                 for (let ip in json_result["section3"][username]){
-                    $$('.cur_line').append('<p class="ips" data-in_v4="'+json_result["section3"][username][ip]['in_v4']+'" data-in_v6="'+json_result["section3"][username][ip]['in_v6']+'" >'+json_result["section3"][username][ip]['ip']+'</p>');
+                    $('.cur_line').append('<p class="ips" data-in_v4="'+json_result["section3"][username][ip]['in_v4']+'" data-in_v6="'+json_result["section3"][username][ip]['in_v6']+'" >'+json_result["section3"][username][ip]['ip']+'</p>');
                 }
-                $$('.cur_line').removeClass("cur_line");
+                $('.cur_line').removeClass("cur_line");
 
             }
-            $$('[data-toggle="tooltip"]').tooltip();
+            $('[data-toggle="tooltip"]').tooltip();
     }
 
     function filter_duration(minutes,duration_val){
@@ -523,20 +533,20 @@ $var Navbar: $:NavbarF()
     }
 
     function filter_grade(lign_object, grade_val) {
-        let tds = $$( lign_object ).find( 'td.grade_task' );
+        let tds = $( lign_object ).find( 'td.grade_task' );
         if (grade_val ===0){
-            $$(tds).each(function () {
-                $$(this).removeClass("bg-danger");
+            $(tds).each(function () {
+                $(this).removeClass("bg-danger");
             });
             return true;
         }
         let show = true;
-        $$(tds).each(function () {
-            if ($$(this).data('grade') >= grade_val && $$(this).data('grade')>=0) {
-                $$(this).addClass("bg-danger");
+        $(tds).each(function () {
+            if ($(this).data('grade') >= grade_val && $(this).data('grade')>=0) {
+                $(this).addClass("bg-danger");
             }else{
                 show=false;
-                $$(this).removeClass("bg-danger");
+                $(this).removeClass("bg-danger");
             }
         });
         return show;
@@ -548,20 +558,20 @@ $var Navbar: $:NavbarF()
     }
 
     function filter_submissions(lign_object, sub_val) {
-        let tds = $$( lign_object ).find( 'td.sub_count' );
+        let tds = $( lign_object ).find( 'td.sub_count' );
         if (sub_val===9999999999){
-            $$(tds).each(function () {
-                $$(this).removeClass("bg-warning");
+            $(tds).each(function () {
+                $(this).removeClass("bg-warning");
             });
             return true;
         }
         let count = 0;
-        $$(tds).each(function () {
-            if ($$(this).data('count') <= sub_val && $$(this).data('count')>0) {
+        $(tds).each(function () {
+            if ($(this).data('count') <= sub_val && $(this).data('count')>0) {
                 count++;
-                $$(this).addClass("bg-warning");
+                $(this).addClass("bg-warning");
             }else{
-                $$(this).removeClass("bg-warning");
+                $(this).removeClass("bg-warning");
             }
         });
         return count > 0;
@@ -570,9 +580,9 @@ $var Navbar: $:NavbarF()
     function filter_only_submitters(is_checked_submitters_only,lign_object){
         if (is_checked_submitters_only){
             let result = false;
-            let td_count =  $$(lign_object).find('td.sub_count');
-            $$(td_count).each(function () {
-                if ($$(this).data('count') > 0){
+            let td_count =  $(lign_object).find('td.sub_count');
+            $(td_count).each(function () {
+                if ($(this).data('count') > 0){
                     result = true;
                 }
             })
@@ -582,20 +592,20 @@ $var Navbar: $:NavbarF()
     }
 
     function filter(){
-        let duration_val = $$('#duration_input').val();
-        let task_val = $$('#task_answered_input').val();
-        let sub_val = $$('#min_sub_input').val();
-        let grade_task_val = $$('#grade_per_question_input').val();
-        let is_checked_submitters_only = $$('#submitters_only_input').prop('checked');
-        let grade_total_val = $$('#grade_total_input').val();
+        let duration_val = $('#duration_input').val();
+        let task_val = $('#task_answered_input').val();
+        let sub_val = $('#min_sub_input').val();
+        let grade_task_val = $('#grade_per_question_input').val();
+        let is_checked_submitters_only = $('#submitters_only_input').prop('checked');
+        let grade_total_val = $('#grade_total_input').val();
 
         if (duration_val === "" && task_val === "" && sub_val === "" && grade_task_val === "" && grade_total_val==="" && !is_checked_submitters_only){
             //show all
-            $$('#sub_table tr.stud').each(function(){
-                $$(this).show();
-                $$(this).find('td').each(function(){
-                    $$(this).removeClass('bg-warning');
-                    $$(this).removeClass('bg-danger');
+            $('#sub_table tr.stud').each(function(){
+                $(this).show();
+                $(this).find('td').each(function(){
+                    $(this).removeClass('bg-warning');
+                    $(this).removeClass('bg-danger');
                 });
             });
         }else{
@@ -615,68 +625,68 @@ $var Navbar: $:NavbarF()
             if(grade_total_val===""){
                 grade_total_val=0;
             }
-            $$('#sub_table tr.stud').each(function(){
-                let minutes = $$(this).data("minutes");
-                let nb_task = $$(this).data("nb_task");
-                let stud_grade = $$($$(this).find("td.total_grade")[0]).data("total_grade");
-                if (filter_submissions($$(this),sub_val) &&
+            $('#sub_table tr.stud').each(function(){
+                let minutes = $(this).data("minutes");
+                let nb_task = $(this).data("nb_task");
+                let stud_grade = $($(this).find("td.total_grade")[0]).data("total_grade");
+                if (filter_submissions($(this),sub_val) &&
                     filter_duration(minutes,duration_val) &&
                     filter_task_answered(nb_task,task_val) &&
-                    filter_grade($$(this),grade_task_val) &&
+                    filter_grade($(this),grade_task_val) &&
                     filter_total_grade(stud_grade,grade_total_val)&&
-                    filter_only_submitters(is_checked_submitters_only,$$(this))){
-                    $$(this).show();
+                    filter_only_submitters(is_checked_submitters_only,$(this))){
+                    $(this).show();
                 }else{
-                    $$(this).hide();
+                    $(this).hide();
                 }
             });
         }
     }
 
-    $$( document ).ready(function() {
+    $( document ).ready(function() {
        diagram_request("diag1");
     });
 
-    $$("#diag2").click(function () {
+    $("#diag2").click(function () {
         diagram_request("diag2");
     })
-    $$("#diag3").click(function () {
+    $("#diag3").click(function () {
         diagram_request("diag3");
-        $$('#duration_input').on("keyup",function () {filter();});
-        $$('#task_answered_input').on("keyup",function () {filter();});
-        $$('#min_sub_input').on("keyup",function () {filter();});
-        $$('#grade_per_question_input').on("keyup",function () {filter();});
-        $$('#submitters_only_input').on("change",function(){filter();});
-        $$('#grade_total_input').on("change",function(){filter()});
+        $('#duration_input').on("keyup",function () {filter();});
+        $('#task_answered_input').on("keyup",function () {filter();});
+        $('#min_sub_input').on("keyup",function () {filter();});
+        $('#grade_per_question_input').on("keyup",function () {filter();});
+        $('#submitters_only_input').on("change",function(){filter();});
+        $('#grade_total_input').on("change",function(){filter()});
     })
 
     function filter_ips(radioValue) {
-        $$('#section3_table_body tr').each(function(){
-            let line = $$(this);
+        $('#section3_table_body tr').each(function(){
+            let line = $(this);
             let display = false;
             if(radioValue==="all"){
-                $$(this).find("p.ips").each(function(){
-                    $$(this).removeClass('highlight');
+                $(this).find("p.ips").each(function(){
+                    $(this).removeClass('highlight');
                 });
                 display=true;
             }else if(radioValue==="in"){
-                $$(this).find("p.ips").each(function(){
-                    $$(this).removeClass('highlight');
-                    let v4 = $$(this).data('in_v4');
-                    let v6 = $$(this).data('in_v6');
+                $(this).find("p.ips").each(function(){
+                    $(this).removeClass('highlight');
+                    let v4 = $(this).data('in_v4');
+                    let v6 = $(this).data('in_v6');
                     if (v4 || v6){
                         display=true;
-                        $$(this).addClass('highlight');
+                        $(this).addClass('highlight');
                     }
                 });
             }else{
-                $$(this).find("p.ips").each(function(){
-                    $$(this).removeClass('highlight');
-                    let v4 = $$(this).data('in_v4');
-                    let v6 = $$(this).data('in_v6');
+                $(this).find("p.ips").each(function(){
+                    $(this).removeClass('highlight');
+                    let v4 = $(this).data('in_v4');
+                    let v6 = $(this).data('in_v6');
                     if (!v4 && !v6){
                         display=true;
-                        $$(this).addClass('highlight');
+                        $(this).addClass('highlight');
                     }
                 });
             }
@@ -689,13 +699,15 @@ $var Navbar: $:NavbarF()
         });
     }
 
-    $$("#diag4").click(function () {
+    $("#diag4").click(function () {
         diagram_request("diag4");
-        $$("input[name='radio_filter']").change(function () {
-            var radioValue = $$("input[name='radio_filter']:checked").val();
+        $("input[name='radio_filter']").change(function () {
+            var radioValue = $("input[name='radio_filter']:checked").val();
             if(radioValue){
                 filter_ips(radioValue);
             }
         });
     })
 </script>
+
+{% endblock %}
