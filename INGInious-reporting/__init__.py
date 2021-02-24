@@ -19,7 +19,6 @@
 import json
 import os
 import logging
-import web
 
 from flask import send_from_directory, request
 from inginious.frontend.pages.utils import INGIniousPage
